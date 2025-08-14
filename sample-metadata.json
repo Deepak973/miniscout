@@ -1,0 +1,22 @@
+{
+  "frame": {
+    "name": "Mini Wordle",
+    "version": "1",
+    "iconUrl": "https://miniwordle.vercel.app/logo.png",
+    "homeUrl": "https://miniwordle.vercel.app",
+    "buttonTitle": "Open Mini Wordle",
+    "splashImageUrl": "https://miniwordle.vercel.app/splash.png",
+    "splashBackgroundColor": "#ffff80",
+    "subtitle": "Guess the word",
+    "description": "A daily word-guessing challenge for Farcaster users - test your vocabulary in 6 tries!",
+    "primaryCategory": "games",
+    "tags": ["game"],
+    "tagline": "Test your vocab in 6 tries",
+    "ogDescription": "Test your vocabulary in 6 tries"
+  },
+  "accountAssociation": {
+    "header": "eyJmaWQiOjY3MzEyNiwidHlwZSI6ImF1dGgiLCJrZXkiOiIweDQ2RkU3ZDUxRTNiOTA4MENDY0VDMTJBNjc1ZjYzQzg5MkEyYzBEM0YifQ",
+    "payload": "eyJkb21haW4iOiJtaW5pd29yZGxlLnZlcmNlbC5hcHAifQ",
+    "signature": "dw2XW305SzhPhOcPlp5SpDAJnPzMNTfl8bm8QYSJrT4rkw6YjrlEMCHwhdN2Vm5PNVNfsKB92/2aGZV4gES0NBw=="
+  }
+}
