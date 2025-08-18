@@ -1,0 +1,20 @@
+{
+  "frame": {
+    "name": "miniscout",
+    "version": "1",
+    "iconUrl": "https://miniscout.vercel.app/icon.png",
+    "homeUrl": "https://miniscout.vercel.app",
+    "imageUrl": "https://miniscout.vercel.app/logo.png",
+    "splashImageUrl": "https://miniscout.vercel.app/splash.png",
+    "splashBackgroundColor": "#000000",
+    "webhookUrl": "https://miniscout.vercel.app/api/webhook",
+    "subtitle": "Discover and rate you fav mini apps",
+    "description": "Discover and rate you fav mini apps",
+    "primaryCategory": "social"
+  },
+  "accountAssociation": {
+    "header": "eyJmaWQiOjY3MzEyNiwidHlwZSI6ImF1dGgiLCJrZXkiOiIweDQ2RkU3ZDUxRTNiOTA4MENDY0VDMTJBNjc1ZjYzQzg5MkEyYzBEM0YifQ",
+    "payload": "eyJkb21haW4iOiJtaW5pc2NvdXQudmVyY2VsLmFwcCJ9",
+    "signature": "Po/f5kkWqo5qwar4dQwjyH5tzpCJyCiwfi9wAOmj3Ml1188fwRvmUNaG0FP+x/UpeC48seN3j95F4HK+ZBk5hBs="
+  }
+}
