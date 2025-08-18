@@ -12,6 +12,7 @@
     "description": "Discover and rate you fav mini apps",
     "primaryCategory": "social"
   },
+
   "accountAssociation": {
     "header": "eyJmaWQiOjY3MzEyNiwidHlwZSI6ImF1dGgiLCJrZXkiOiIweDQ2RkU3ZDUxRTNiOTA4MENDY0VDMTJBNjc1ZjYzQzg5MkEyYzBEM0YifQ",
     "payload": "eyJkb21haW4iOiJtaW5pc2NvdXQudmVyY2VsLmFwcCJ9",
