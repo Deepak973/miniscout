@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "~/lib/mongodb";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // Basic URL validation
-      const url = new URL(miniappUrl);
+      new URL(miniappUrl);
 
       // Check if the URL is accessible
       const response = await fetch(miniappUrl, {
@@ -60,15 +59,15 @@ export async function POST(request: NextRequest) {
           message: "Unable to access the provided URL",
         });
       }
-    } catch (error) {
-      console.error("Error verifying app ownership:", error);
+    } catch (_error) {
+      console.error("Error verifying app ownership:", _error);
       return NextResponse.json({
         verified: false,
         message: "Invalid URL or unable to verify ownership",
       });
     }
-  } catch (error) {
-    console.error("Error in verify-ownership:", error);
+  } catch (_error) {
+    console.error("Error in verify-ownership:", _error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

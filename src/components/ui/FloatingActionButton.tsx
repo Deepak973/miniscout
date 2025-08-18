@@ -4,7 +4,7 @@ import { Package, Plus } from "lucide-react";
 
 interface FloatingActionButtonProps {
   onClick: () => void;
-  position?: "left" | "right";
+  position?: "left" | "right" | "bottom-right";
   className?: string;
   buttonText?: string;
 }
@@ -17,11 +17,22 @@ export function FloatingActionButton({
 }: FloatingActionButtonProps) {
   const isTextButton = buttonText && buttonText !== "Add New";
 
+  const getPositionClasses = () => {
+    switch (position) {
+      case "left":
+        return "left-6";
+      case "bottom-right":
+      case "right":
+      default:
+        return "right-6";
+    }
+  };
+
   return (
     <button
       onClick={onClick}
       className={`
-        fixed bottom-6 ${position === "right" ? "right-6" : "left-6"} z-50
+        fixed bottom-6 ${getPositionClasses()} z-50
         ${
           isTextButton
             ? "px-4 py-2 rounded-xl text-sm font-medium"

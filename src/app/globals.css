@@ -25,21 +25,133 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #f2f2f2;
+  --primary: #f2f2f2;
+  --secondary: #eae4d5;
+  --accent: #b6b09f;
+  --text-primary: #f2f2f2;
+  --text-secondary: #eae4d5;
+  --text-muted: #b6b09f;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #000000;
+    --foreground: #f2f2f2;
+    --primary: #f2f2f2;
+    --secondary: #eae4d5;
+    --accent: #b6b09f;
+    --text-primary: #f2f2f2;
+    --text-secondary: #eae4d5;
+    --text-muted: #b6b09f;
   }
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Inter', Helvetica, Arial, sans-serif;
+  font-family: "Roboto Mono", monospace;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.roboto-mono-100 {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 100;
+  font-style: normal;
+}
+
+.roboto-mono-200 {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 200;
+  font-style: normal;
+}
+
+.roboto-mono-300 {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 300;
+  font-style: normal;
+}
+
+.roboto-mono-400 {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.roboto-mono-500 {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.roboto-mono-600 {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.roboto-mono-700 {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.roboto-mono-100-italic {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 100;
+  font-style: italic;
+}
+
+.roboto-mono-200-italic {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 200;
+  font-style: italic;
+}
+
+.roboto-mono-300-italic {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 300;
+  font-style: italic;
+}
+
+.roboto-mono-400-italic {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.roboto-mono-500-italic {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.roboto-mono-600-italic {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.roboto-mono-700-italic {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: italic;
 }
 
 * {
@@ -49,6 +161,57 @@ body {
 
 *::-webkit-scrollbar {
   display: none;
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+@keyframes blink {
+  0%,
+  100% {
+    border-color: transparent;
+  }
+  50% {
+    border-color: #a855f7;
+  } /* Tailwind's purple-500 */
+}
+@keyframes typing {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+@keyframes blink {
+  50% {
+    border-color: transparent;
+  }
+}
+.typewriter {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 3px solid #facc15;
+  animation: typing 3s steps(30, end), blink 0.75s step-end infinite;
+}
+
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
 }
 
 @layer base {
@@ -62,11 +225,11 @@ body {
   .container {
     @apply mx-auto max-w-md px-4;
   }
-  
+
   .container-wide {
     @apply mx-auto max-w-lg px-4;
   }
-  
+
   .container-narrow {
     @apply mx-auto max-w-sm px-4;
   }
@@ -75,7 +238,7 @@ body {
   .card {
     @apply bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm;
   }
-  
+
   .card-primary {
     @apply bg-primary/10 border-primary/20;
   }
@@ -84,15 +247,15 @@ body {
   .btn {
     @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
   }
-  
+
   .btn-primary {
     @apply bg-primary text-white hover:bg-primary-dark focus:ring-primary;
   }
-  
+
   .btn-secondary {
     @apply bg-secondary text-gray-900 hover:bg-gray-200 focus:ring-gray-500 dark:bg-secondary-dark dark:text-gray-100 dark:hover:bg-gray-600;
   }
-  
+
   .btn-outline {
     @apply border border-gray-300 bg-transparent hover:bg-gray-50 focus:ring-gray-500 dark:border-gray-600 dark:hover:bg-gray-800;
   }
@@ -106,7 +269,7 @@ body {
   .spinner {
     @apply animate-spin rounded-full border-2 border-gray-300 border-t-primary;
   }
-  
+
   .spinner-primary {
     @apply animate-spin rounded-full border-2 border-white border-t-transparent;
   }

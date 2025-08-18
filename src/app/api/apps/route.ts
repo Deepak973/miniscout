@@ -89,6 +89,12 @@ export async function GET(request: NextRequest) {
     const db = await getDb();
     const appsCollection = db.collection("apps");
 
+    // If no specific query, return all apps for debugging
+    if (!appId && !ownerFid && !domain) {
+      const allApps = await appsCollection.find({}).toArray();
+      return NextResponse.json({ apps: allApps });
+    }
+
     const query: any = {};
 
     if (appId) {

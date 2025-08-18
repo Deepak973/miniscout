@@ -9,7 +9,6 @@ import {
   ContextTab,
   WalletTab,
 } from "~/components/ui/tabs";
-import { USE_WALLET } from "~/lib/constants";
 import { useNeynarUser } from "../hooks/useNeynarUser";
 
 // --- Types ---
@@ -57,8 +56,7 @@ export default function App(
   { title }: AppProps = { title: "Neynar Starter Kit" }
 ) {
   // --- Hooks ---
-  const { isSDKLoaded, context, setInitialTab, setActiveTab, currentTab } =
-    useMiniApp();
+  const { isSDKLoaded, context, setInitialTab, currentTab } = useMiniApp();
 
   // --- Neynar user hook ---
   const { user: neynarUser } = useNeynarUser(context || undefined);

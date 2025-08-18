@@ -64,7 +64,7 @@ export default function FeedbacksPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation title="All Apps" showBack={false} />
+      <Navigation title="All Apps" showBack={false} showAddApp={true} />
 
       <div className="px-4 py-6 space-y-6">
         {/* Header */}
@@ -156,7 +156,7 @@ export default function FeedbacksPage() {
                   key={app.appId}
                   className="border border-gray-200 rounded-2xl p-4 hover:shadow-md transition-shadow bg-white"
                 >
-                  <div className="flex items-start space-x-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
                     {/* App Icon */}
                     <div className="flex-shrink-0">
                       <img
@@ -174,7 +174,7 @@ export default function FeedbacksPage() {
                       <h3 className="font-semibold text-gray-900 text-lg mb-1 truncate">
                         {app.name}
                       </h3>
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      <p className="text-gray-600 text-sm mb-3 overflow-hidden text-ellipsis display-webkit-box -webkit-line-clamp-2 -webkit-box-orient-vertical">
                         {app.description}
                       </p>
 
@@ -199,7 +199,7 @@ export default function FeedbacksPage() {
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex space-x-2">
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                         <Button
                           onClick={() => handleProvideFeedback(app.appId)}
                           className="flex-1 rounded-xl"
