@@ -8,7 +8,7 @@
     "splashImageUrl": "https://miniscout.vercel.app/splash.png",
     "splashBackgroundColor": "#000000",
     "webhookUrl": "https://miniscout.vercel.app/api/webhook",
-    "subtitle": "Discover and rate you fav mini apps",
+    "subtitle": "Discover mini apps",
     "description": "Discover and rate you fav mini apps",
     "primaryCategory": "social"
   },
