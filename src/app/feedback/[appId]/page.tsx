@@ -195,7 +195,7 @@ export default function FeedbackPage({
               App Not Found
             </h2>
             <p className="text-[#B6B09F] roboto-mono-400">
-              The app you're looking for doesn't exist.
+              The app you&apos;re looking for doesn&apos;t exist.
             </p>
           </div>
         </div>

@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Copy,
   ExternalLink,
-  MessageSquare,
   Star,
   Plus,
   Package,

@@ -11,11 +11,6 @@ import {
   X,
   Eye,
   Sparkles,
-  Zap,
-  Heart,
-  TrendingUp,
-  Users,
-  Award,
 } from "lucide-react";
 import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/input";
@@ -248,7 +243,7 @@ export default function HomePage() {
             </div>
             {searchTerm && (
               <p className="text-sm text-[#B6B09F] mt-2 ml-4 roboto-mono-400">
-                Found {filteredApps.length} apps for "{searchTerm}"
+                Found {filteredApps.length} apps for &quot;{searchTerm}&quot;
               </p>
             )}
           </div>
