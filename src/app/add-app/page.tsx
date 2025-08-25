@@ -465,7 +465,7 @@ export default function AddAppPage() {
                 <span className="text-[#3d550c] font-medium">
                   Registration Fee:
                 </span>
-                <span className="text-[#3d550c] font-bold">{"0.001"} ETH</span>
+                <span className="text-[#3d550c] font-bold">{"0.0001"} ETH</span>
               </div>
             </div>
 
@@ -930,7 +930,7 @@ export default function AddAppPage() {
                           Registration Fee:
                         </span>
                         <span className="text-[#3d550c] font-medium">
-                          0.001 ETH
+                          0.0001 ETH
                         </span>
                       </div>
                       <div className="flex justify-between">
