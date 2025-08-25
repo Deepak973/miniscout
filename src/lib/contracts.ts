@@ -40,8 +40,8 @@ export interface UserTokenReward {
 
 // Contract addresses (replace with your deployed addresses)
 export const CONTRACT_ADDRESSES = {
-  MINISCOUT: "0xcCEAd9170B4A9ef324aB9304Dc6cC37101a5361E", // Replace with your deployed MiniScout contract address
-  MINISCOUT_TOKEN: "0xa2CC944515134b7d257f503E8D3d3D283d45AcDb", // Replace with your deployed MiniScoutToken contract address
+  MINISCOUT: "0x99b465bb9bc9Fe97EB38dB1325E7cb8f183c1E58", // Replace with your deployed MiniScout contract address
+  MINISCOUT_TOKEN: "0x7de87b9bbd164D21fa8691657c3DC841aD246e65", // Replace with your deployed MiniScoutToken contract address
 } as const;
 
 // Public client for read operations
