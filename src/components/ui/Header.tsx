@@ -1,76 +1,158 @@
 "use client";
 
 import { useState } from "react";
-import { APP_NAME } from "~/lib/constants";
-import sdk from "@farcaster/miniapp-sdk";
-import { useMiniApp } from "@neynar/react";
+import { ChevronDown, User, ArrowLeft, Menu, Plus, Wallet } from "lucide-react";
+import { useContract } from "~/hooks/useContract";
+import { useConnect, useDisconnect } from "wagmi";
 
-type HeaderProps = {
-  neynarUser?: {
-    fid: number;
-    score: number;
-  } | null;
-};
+interface HeaderProps {
+  title?: string;
+  showBackButton?: boolean;
+  onBackClick?: () => void;
+  showAddButton?: boolean;
+  onAddClick?: () => void;
+  showMenuButton?: boolean;
+  onMenuClick?: () => void;
+}
 
-export function Header({ neynarUser }: HeaderProps) {
-  const { context } = useMiniApp();
-  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+export default function Header({
+  title = "MiniScout",
+  showBackButton = false,
+  onBackClick,
+  showAddButton = false,
+  onAddClick,
+  showMenuButton = false,
+  onMenuClick,
+}: HeaderProps) {
+  const { isConnected, address } = useContract();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
+  const [walletDropdownOpen, setWalletDropdownOpen] = useState(false);
+
+  const handleBackClick = () => {
+    if (onBackClick) {
+      onBackClick();
+    } else {
+      window.location.href = "/";
+    }
+  };
+
+  const handleAddClick = () => {
+    if (onAddClick) {
+      onAddClick();
+    } else {
+      window.location.href = "/add-app";
+    }
+  };
+
+  const handleMenuClick = () => {
+    if (onMenuClick) {
+      onMenuClick();
+    }
+  };
 
   return (
-    <div className="relative">
-      <div 
-        className="mt-4 mb-4 mx-4 px-2 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-between border-[3px] border-double border-primary"
-      >
-        <div className="text-lg font-light">
-          Welcome to {APP_NAME}!
-        </div>
-        {context?.user && (
-          <div 
-            className="cursor-pointer"
-            onClick={() => {
-              setIsUserDropdownOpen(!isUserDropdownOpen);
-            }}
-          >
-            {context.user.pfpUrl && (
-              <img 
-                src={context.user.pfpUrl} 
-                alt="Profile" 
-                className="w-10 h-10 rounded-full border-2 border-primary"
-              />
+    <div className="bg-white shadow-sm border-b border-[#81b622]/20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Left side - Back button, Menu, and Logo */}
+          <div className="flex items-center space-x-4">
+            {showBackButton && (
+              <button
+                onClick={handleBackClick}
+                className="p-2 text-[#3d550c] hover:text-[#59981a] hover:bg-[#ecf87f]/20 rounded-md"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
             )}
+
+            {showMenuButton && (
+              <button
+                onClick={handleMenuClick}
+                className="p-2 rounded-md text-[#3d550c] hover:text-[#59981a] hover:bg-[#ecf87f]/20"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
+
+            <div className="flex items-center space-x-3">
+              <img
+                src="/logo.png"
+                alt="MiniScout"
+                className="w-8 h-8 rounded"
+              />
+              <h1 className="text-xl font-semibold text-[#3d550c]">{title}</h1>
+            </div>
           </div>
-        )}
-      </div>
-      {context?.user && (
-        <>      
-          {isUserDropdownOpen && (
-            <div className="absolute top-full right-0 z-50 w-fit mt-1 mx-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-              <div className="p-3 space-y-2">
-                <div className="text-right">
-                  <h3 
-                    className="font-bold text-sm hover:underline cursor-pointer inline-block"
-                    onClick={() => sdk.actions.viewProfile({ fid: context.user.fid })}
+
+          {/* Right side - Wallet info and actions */}
+          <div className="flex items-center space-x-3">
+            {isConnected ? (
+              <>
+                {/* Wallet Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setWalletDropdownOpen(!walletDropdownOpen)}
+                    className="flex items-center space-x-2 px-3 py-2 bg-[#ecf87f]/20 text-[#3d550c] rounded-md hover:bg-[#ecf87f]/30 transition-colors"
                   >
-                    {context.user.displayName || context.user.username}
-                  </h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    @{context.user.username}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">
-                    FID: {context.user.fid}
-                  </p>
-                  {neynarUser && (
-                    <>
-                      <p className="text-xs text-gray-500 dark:text-gray-500">
-                        Neynar Score: {neynarUser.score}
-                      </p>
-                    </>
+                    <User className="w-4 h-4" />
+                    <span className="text-sm font-medium hidden sm:inline">
+                      {address?.slice(0, 6)}...{address?.slice(-4)}
+                    </span>
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+
+                  {walletDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-[#ecf87f]/30 z-50">
+                      <div className="py-1">
+                        <div className="px-4 py-2 text-sm text-[#3d550c] border-b border-[#ecf87f]/20">
+                          <div className="font-medium">Connected Wallet</div>
+                          <div className="text-[#59981a] text-xs mt-1">
+                            {address?.slice(0, 6)}...{address?.slice(-4)}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            disconnect();
+                            setWalletDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm text-[#3d550c] hover:bg-[#ecf87f]/20 transition-colors"
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
-            </div>
-          )}
-        </>
+
+                {showAddButton && (
+                  <button
+                    onClick={handleAddClick}
+                    className="p-2.5 bg-[#59981a] text-white rounded-md hover:bg-[#81b622] transition-colors"
+                    title="Add New App"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                )}
+              </>
+            ) : (
+              <button
+                onClick={() => connect({ connector: connectors[0] })}
+                className="p-2 bg-[#59981a] text-white rounded-md hover:bg-[#81b622] flex items-center justify-center"
+              >
+                <Wallet className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Click outside to close wallet dropdown */}
+      {walletDropdownOpen && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setWalletDropdownOpen(false)}
+        />
       )}
     </div>
   );

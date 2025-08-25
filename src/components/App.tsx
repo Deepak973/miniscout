@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useMiniApp } from "@neynar/react";
-import { Header } from "~/components/ui/Header";
+import Header from "~/components/ui/Header";
 import {
   HomeTab,
   FeedbacksTab,
@@ -59,7 +59,7 @@ export default function App(
   const { isSDKLoaded, context, setInitialTab, currentTab } = useMiniApp();
 
   // --- Neynar user hook ---
-  const { user: neynarUser } = useNeynarUser(context || undefined);
+  const { user: _neynarUser } = useNeynarUser(context || undefined);
 
   // --- Effects ---
   /**
@@ -99,7 +99,7 @@ export default function App(
       className="min-h-screen bg-gray-50"
     >
       {/* Header should be full width */}
-      <Header neynarUser={neynarUser} />
+      <Header />
 
       {/* Main content */}
       <div className="container py-2">

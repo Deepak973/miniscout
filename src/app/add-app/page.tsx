@@ -1,397 +1,699 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { Upload, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, CheckCircle, AlertCircle, Loader2, User } from "lucide-react";
 import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { useMiniApp } from "@neynar/react";
-import { useDropzone } from "react-dropzone";
 import toast from "react-hot-toast";
+import { useContract } from "~/hooks/useContract";
+import { formatEther, parseEther } from "viem";
+import { useConnect, useDisconnect } from "wagmi";
+import { publicClient } from "~/lib/contracts";
+import Header from "~/components/ui/Header";
 
 interface AppData {
   name: string;
   description: string;
   iconUrl: string;
-  splashUrl: string;
-  homeUrl: string;
   miniappUrl: string;
+  appId: string;
+  tokenAmount: string;
+  rewardPerReview: string;
+  appTokenAddress: string;
+}
+
+interface FrameData {
+  version: string;
+  image: string;
+  frames_url: string;
+  title: string;
+  manifest: {
+    frame?: {
+      name: string;
+      home_url: string;
+      icon_url: string;
+      description: string;
+    };
+    miniapp?: {
+      name: string;
+      home_url: string;
+      icon_url: string;
+      description: string;
+    };
+  };
+  author: {
+    fid: number;
+    username: string;
+    display_name: string;
+    custody_address: string;
+  };
 }
 
 export default function AddAppPage() {
   const { context } = useMiniApp();
+  const { isConnected, address, registerApp, approveTokens } = useContract();
+  const { connect, connectors } = useConnect();
+  const { disconnect: _disconnect } = useDisconnect();
+  const [submitting, setSubmitting] = useState(false);
+  const [tokenAllowance, setTokenAllowance] = useState<bigint>(0n);
+  const [tokenBalance, setTokenBalance] = useState<bigint>(0n);
+  const [checkingAllowance, setCheckingAllowance] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<FrameData[]>([]);
+  const [selectedFrame, setSelectedFrame] = useState<FrameData | null>(null);
+  const [ownershipVerified, setOwnershipVerified] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [userFid, setUserFid] = useState<number | null>(null);
+
   const [appData, setAppData] = useState<AppData>({
     name: "",
     description: "",
     iconUrl: "",
-    splashUrl: "",
-    homeUrl: "",
     miniappUrl: "",
+    appId: "",
+    tokenAmount: "",
+    rewardPerReview: "",
+    appTokenAddress: "",
   });
-  const [metadata, setMetadata] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [domainExists, setDomainExists] = useState<boolean | null>(null);
-  const [checkingDomain, setCheckingDomain] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const metadataContent = JSON.parse(e.target?.result as string);
-          setMetadata(metadataContent);
-
-          if (metadataContent.frame) {
-            setAppData({
-              name: metadataContent.frame.name || "",
-              description: metadataContent.frame.description || "",
-              iconUrl: metadataContent.frame.iconUrl || "",
-              splashUrl: metadataContent.frame.splashImageUrl || "",
-              homeUrl: metadataContent.frame.homeUrl || "",
-              miniappUrl: "", // This will be filled manually by user
-            });
-          }
-
-          toast.success("Manifest file loaded successfully!");
-        } catch (_error) {
-          toast.error("Invalid JSON file");
-        }
-      };
-      reader.readAsText(file);
+  // Get user's FID from context
+  useEffect(() => {
+    if (context?.user?.fid) {
+      setUserFid(context.user.fid);
     }
-  }, []);
+  }, [context]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      "application/json": [".json"],
-    },
-    multiple: false,
-  });
+  // Search for frames using backend API
+  const seachMiniApps = async () => {
+    if (!searchQuery.trim()) {
+      toast.error("Please enter a search term");
+      return;
+    }
 
-  const checkDomainExists = async (homeUrl: string) => {
-    if (!homeUrl) return;
-
-    setCheckingDomain(true);
+    setSearching(true);
     try {
-      const domain = new URL(homeUrl).hostname;
-      const response = await fetch(`/api/apps?domain=${domain}`);
+      const response = await fetch(
+        `/api/frames/search?q=${encodeURIComponent(searchQuery)}&limit=20`
+      );
       const data = await response.json();
-      setDomainExists(data.apps && data.apps.length > 0);
-    } catch (_error) {
-      console.error("Error checking domain:", _error);
-      setDomainExists(null);
+
+      if (data.success && data.frames) {
+        setSearchResults(data.frames);
+        toast.success(`Found ${data.frames.length} MiniApp`);
+      } else {
+        setSearchResults([]);
+        toast.error(data.error || "No frames found");
+      }
+    } catch (error) {
+      console.error("Error searching frames:", error);
+      toast.error("Failed to search frames");
     } finally {
-      setCheckingDomain(false);
+      setSearching(false);
     }
   };
 
-  const handleHomeUrlChange = (value: string) => {
-    setAppData((prev) => ({ ...prev, homeUrl: value }));
-    if (value) {
-      checkDomainExists(value);
+  // Check if user owns the frame (FID match)
+  const isFrameOwner = (frame: FrameData) => {
+    return userFid && frame.author.fid === userFid;
+  };
+
+  // Select a frame
+  const selectFrame = (frame: FrameData) => {
+    setSelectedFrame(frame);
+
+    // Extract frame data
+    const frameData = frame.manifest.frame || frame.manifest.miniapp;
+    if (frameData) {
+      setAppData((prev) => ({
+        ...prev,
+        name: frameData.name || "",
+        description: frameData.description || "",
+        iconUrl: frameData.icon_url || "",
+        appId: frame.frames_url || "",
+        // Don't auto-fill miniappUrl - let user input it
+      }));
+    }
+
+    // Check ownership
+    if (isFrameOwner(frame)) {
+      setOwnershipVerified(true);
+      toast.success("Mini App selected - You are the owner!");
     } else {
-      setDomainExists(null);
+      setOwnershipVerified(false);
+      toast.error("You are not the owner of this frame");
     }
   };
+
+  // Check token allowance and balance
+  const checkTokenAllowance = useCallback(async () => {
+    if (!appData.appTokenAddress || !appData.tokenAmount) return;
+
+    setCheckingAllowance(true);
+    try {
+      const allowance = await publicClient.readContract({
+        address: appData.appTokenAddress as `0x${string}`,
+        abi: [
+          {
+            inputs: [
+              { name: "owner", type: "address" },
+              { name: "spender", type: "address" },
+            ],
+            name: "allowance",
+            outputs: [{ name: "", type: "uint256" }],
+            stateMutability: "view",
+            type: "function",
+          },
+        ],
+        functionName: "allowance",
+        args: [
+          address as `0x${string}`,
+          "0xcCEAd9170B4A9ef324aB9304Dc6cC37101a5361E", // MiniScout contract address
+        ],
+      });
+
+      const balance = await publicClient.readContract({
+        address: appData.appTokenAddress as `0x${string}`,
+        abi: [
+          {
+            inputs: [{ name: "account", type: "address" }],
+            name: "balanceOf",
+            outputs: [{ name: "", type: "uint256" }],
+            stateMutability: "view",
+            type: "function",
+          },
+        ],
+        functionName: "balanceOf",
+        args: [address as `0x${string}`],
+      });
+
+      setTokenAllowance(allowance);
+      setTokenBalance(balance);
+    } catch (error) {
+      console.error("Error checking allowance:", error);
+      toast.error("Failed to check token allowance");
+    } finally {
+      setCheckingAllowance(false);
+    }
+  }, [appData.appTokenAddress, appData.tokenAmount, address]);
+
+  // Handle token approval using the hook function
+  const handleApproveTokens = async () => {
+    if (!appData.appTokenAddress || !appData.tokenAmount) return;
+
+    setSubmitting(true);
+    try {
+      // Use the approveTokens function from the useContract hook
+      await approveTokens(
+        appData.appTokenAddress as `0x${string}`,
+        appData.tokenAmount,
+        "0xcCEAd9170B4A9ef324aB9304Dc6cC37101a5361E" // MiniScout contract address
+      );
+
+      toast.success("Approval transaction submitted!");
+
+      // Wait for transaction and refresh allowance
+      setTimeout(() => {
+        checkTokenAllowance();
+      }, 5000);
+    } catch (error: any) {
+      console.error("Error approving tokens:", error);
+      toast.error(error.message || "Failed to approve tokens");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (appData.appTokenAddress && appData.tokenAmount && address) {
+      checkTokenAllowance();
+    }
+  }, [
+    appData.appTokenAddress,
+    appData.tokenAmount,
+    address,
+    checkTokenAllowance,
+  ]);
 
   const handleSubmit = async () => {
-    if (!context?.user?.fid) {
+    if (!isConnected || !address) {
       toast.error("Please connect your wallet first");
+      return;
+    }
+
+    if (!ownershipVerified) {
+      toast.error("Please select a frame that you own");
       return;
     }
 
     if (
       !appData.name ||
       !appData.description ||
-      !appData.iconUrl ||
-      !appData.homeUrl ||
-      !appData.miniappUrl
+      !appData.miniappUrl ||
+      !appData.appId ||
+      !appData.tokenAmount ||
+      !appData.rewardPerReview ||
+      !appData.appTokenAddress
     ) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    setLoading(true);
-    try {
-      const response = await fetch("/api/apps", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...appData,
-          ownerFid: context.user.fid,
-        }),
-      });
+    const tokenAmount = parseEther(appData.tokenAmount);
+    if (tokenAllowance < tokenAmount) {
+      toast.error("Insufficient token allowance. Please approve tokens first.");
+      return;
+    }
 
-      if (response.ok) {
-        toast.success("Mini app registered successfully!");
-        window.location.href = "/my-apps";
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to register mini app");
-      }
-    } catch (_error) {
-      toast.error("Failed to register mini app");
+    if (tokenBalance < tokenAmount) {
+      toast.error("Insufficient token balance");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await registerApp(
+        appData.name,
+        appData.description,
+        appData.miniappUrl,
+        appData.miniappUrl,
+        appData.iconUrl,
+        appData.appId,
+        appData.tokenAmount,
+        appData.rewardPerReview,
+        appData.appTokenAddress as `0x${string}`
+      );
+
+      toast.success("App registered successfully!");
+      window.location.href = "/";
+    } catch (error: any) {
+      toast.error(error.message || "Failed to register app");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#B6B09F]/10 via-black to-[#EAE4D5]/10"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(242,242,242,0.1),transparent_50%)]"></div>
-
+    <div className="min-h-screen bg-gradient-to-br from-[#ecf87f]/20 to-[#81b622]/10">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-[#F2F2F2]/20">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => window.history.back()}
-              className="p-2 rounded-lg bg-[#F2F2F2]/10 hover:bg-[#F2F2F2]/20 transition-all duration-300 border border-[#F2F2F2]/30"
-            >
-              <ArrowLeft className="w-5 h-5 text-[#F2F2F2]" />
-            </button>
-            <div className="flex items-center space-x-2">
-              <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-[#F2F2F2] to-[#EAE4D5] rounded-full blur opacity-30 animate-pulse"></div>
-                <img
-                  src="/logo.png"
-                  alt="MiniScout"
-                  className="w-8 h-8 rounded-full object-cover relative z-10"
-                />
-              </div>
-              <h1 className="text-lg font-bold text-[#F2F2F2] roboto-mono-400">
-                Add Mini App
-              </h1>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Header title="Add New App" showBackButton={true} />
 
       {/* Main Content */}
-      <div className="px-4 py-6 space-y-6 relative z-10">
-        {/* Hero Section */}
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center space-x-4">
-            <div>
-              <h1 className="text-2xl font-bold text-[#F2F2F2] roboto-mono-400">
-                Register Your Mini App
-              </h1>
-              <p className="text-[#B6B09F] text-sm roboto-mono-400">
-                Upload your manifest and fill in the details
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Upload Section */}
-        <div className="bg-black/50 backdrop-blur-xl rounded-xl p-6 border border-[#F2F2F2]/30">
-          <h2 className="text-lg font-bold text-[#F2F2F2] mb-4 roboto-mono-400">
-            Upload Manifest File
-          </h2>
-          <div
-            {...getRootProps()}
-            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-300 ${
-              isDragActive
-                ? "border-[#F2F2F2] bg-[#F2F2F2]/10"
-                : "border-[#B6B09F] hover:border-[#F2F2F2] hover:bg-[#F2F2F2]/5"
-            }`}
-          >
-            <input {...getInputProps()} />
-            <Upload className="w-12 h-12 text-[#B6B09F] mx-auto mb-4" />
-            <p className="text-[#F2F2F2] font-medium roboto-mono-400">
-              {isDragActive
-                ? "Drop the manifest file here"
-                : "Drag & drop your manifest.json file here"}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {!isConnected ? (
+          <div className="bg-[#ecf87f]/30 border border-[#81b622]/30 rounded-lg p-8 text-center">
+            <h2 className="text-2xl font-semibold text-[#3d550c] mb-2">
+              Connect to Register App
+            </h2>
+            <p className="text-[#59981a] mb-6">
+              Connect your wallet to register a new mini app and set up rewards
+              for reviewers.
             </p>
-            <p className="text-[#B6B09F] text-sm mt-2 roboto-mono-400">
-              or click to browse files
-            </p>
+            <button
+              onClick={() => connect({ connector: connectors[0] })}
+              className="px-6 py-3 bg-[#59981a] text-white rounded-md hover:bg-[#81b622]"
+            >
+              Connect Wallet
+            </button>
           </div>
-          {metadata && (
-            <div className="mt-4 p-4 bg-[#F2F2F2]/10 rounded-lg border border-[#F2F2F2]/20">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="w-5 h-5 text-[#F2F2F2]" />
-                <span className="text-[#F2F2F2] font-medium roboto-mono-400">
-                  Manifest loaded successfully
+        ) : (
+          <div className="space-y-6">
+            {/* Registration Fee Info */}
+            <div className="bg-white border border-[#81b622]/30 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[#3d550c] font-medium">
+                  Registration Fee:
                 </span>
+                <span className="text-[#3d550c] font-bold">{"0.001"} ETH</span>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* App Details Form */}
-        <div className="bg-black/50 backdrop-blur-xl rounded-xl p-6 border border-[#F2F2F2]/30 space-y-6">
-          <h2 className="text-lg font-bold text-[#F2F2F2] roboto-mono-400">
-            App Details
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="name" className="text-[#F2F2F2] roboto-mono-400">
-                App Name *
-              </Label>
-              <Input
-                id="name"
-                type="text"
-                value={appData.name}
-                onChange={(e) =>
-                  setAppData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                className="mt-2 bg-black/50 border-[#F2F2F2]/30 text-[#F2F2F2] placeholder-[#B6B09F] focus:border-[#F2F2F2] roboto-mono-400"
-                placeholder="Enter app name"
-              />
-            </div>
-
-            <div>
-              <Label
-                htmlFor="description"
-                className="text-[#F2F2F2] roboto-mono-400"
-              >
-                Description *
-              </Label>
-              <Input
-                id="description"
-                type="text"
-                value={appData.description}
-                onChange={(e) =>
-                  setAppData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                className="mt-2 bg-black/50 border-[#F2F2F2]/30 text-[#F2F2F2] placeholder-[#B6B09F] focus:border-[#F2F2F2] roboto-mono-400"
-                placeholder="Enter app description"
-              />
-            </div>
-
-            <div>
-              <Label
-                htmlFor="iconUrl"
-                className="text-[#F2F2F2] roboto-mono-400"
-              >
-                Icon URL *
-              </Label>
-              <Input
-                id="iconUrl"
-                type="url"
-                value={appData.iconUrl}
-                onChange={(e) =>
-                  setAppData((prev) => ({ ...prev, iconUrl: e.target.value }))
-                }
-                className="mt-2 bg-black/50 border-[#F2F2F2]/30 text-[#F2F2F2] placeholder-[#B6B09F] focus:border-[#F2F2F2] roboto-mono-400"
-                placeholder="https://example.com/icon.png"
-              />
-            </div>
-
-            <div>
-              <Label
-                htmlFor="splashUrl"
-                className="text-[#F2F2F2] roboto-mono-400"
-              >
-                Splash Image URL
-              </Label>
-              <Input
-                id="splashUrl"
-                type="url"
-                value={appData.splashUrl}
-                onChange={(e) =>
-                  setAppData((prev) => ({ ...prev, splashUrl: e.target.value }))
-                }
-                className="mt-2 bg-black/50 border-[#F2F2F2]/30 text-[#F2F2F2] placeholder-[#B6B09F] focus:border-[#F2F2F2] roboto-mono-400"
-                placeholder="https://example.com/splash.png"
-              />
-            </div>
-
-            <div>
-              <Label
-                htmlFor="homeUrl"
-                className="text-[#F2F2F2] roboto-mono-400"
-              >
-                Home URL *
-              </Label>
-              <Input
-                id="homeUrl"
-                type="url"
-                value={appData.homeUrl}
-                onChange={(e) => handleHomeUrlChange(e.target.value)}
-                className="mt-2 bg-black/50 border-[#F2F2F2]/30 text-[#F2F2F2] placeholder-[#B6B09F] focus:border-[#F2F2F2] roboto-mono-400"
-                placeholder="https://example.com"
-              />
-              {checkingDomain && (
-                <p className="text-[#B6B09F] text-sm mt-2 roboto-mono-400">
-                  Checking domain availability...
-                </p>
-              )}
-              {domainExists !== null && !checkingDomain && (
-                <div className="flex items-center space-x-2 mt-2">
-                  {domainExists ? (
-                    <>
-                      <XCircle className="w-4 h-4 text-[#B6B09F]" />
-                      <span className="text-[#B6B09F] text-sm roboto-mono-400">
-                        Apps from this domain already exist
-                      </span>
-                    </>
+            {/* Mini app Search */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-[#3d550c] mb-4">
+                Search for Your MiniApp
+              </h3>
+              <div className="flex space-x-2 mb-4 items-center">
+                <Input
+                  type="text"
+                  placeholder="Search for your MiniApp..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 text-black text-lg py-3 px-4 h-[50px]"
+                />
+                <Button
+                  onClick={seachMiniApps}
+                  disabled={searching || !searchQuery.trim()}
+                  className="bg-[#59981a] hover:bg-[#81b622] text-white p-2 h-[40px] w-[40px] flex items-center justify-center"
+                >
+                  {searching ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4 text-[#F2F2F2]" />
-                      <span className="text-[#F2F2F2] text-sm roboto-mono-400">
-                        Domain available
+                    <Search className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+
+              {/* User FID Info */}
+              {userFid && (
+                <div className="mb-4 p-3 bg-[#ecf87f]/20 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <User className="w-4 h-4 text-[#59981a]" />
+                    <span className="text-sm text-[#3d550c]">
+                      Your FID: <span className="font-semibold">{userFid}</span>
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Search Results */}
+              {searchResults.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-[#3d550c]">
+                    Search Results:
+                  </h4>
+                  {searchResults.map((frame, index) => {
+                    const isOwner = isFrameOwner(frame);
+                    return (
+                      <div
+                        key={index}
+                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                          selectedFrame === frame
+                            ? "border-[#59981a] bg-[#ecf87f]/20"
+                            : isOwner
+                            ? "border-[#81b622]/50 hover:border-[#59981a] bg-[#ecf87f]/10"
+                            : "border-[#81b622]/30 hover:border-[#81b622]/50"
+                        }`}
+                        onClick={() => selectFrame(frame)}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <img
+                            src={
+                              frame.manifest.frame?.icon_url ||
+                              frame.manifest.miniapp?.icon_url ||
+                              "/icon.png"
+                            }
+                            alt="Mini App icon"
+                            className="w-12 h-12 rounded-lg"
+                            onError={(e) => {
+                              e.currentTarget.src = "/icon.png";
+                            }}
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <div className="font-medium text-[#3d550c]">
+                                {frame.manifest.frame?.name ||
+                                  frame.manifest.miniapp?.name ||
+                                  frame.title}
+                              </div>
+                              {isOwner && (
+                                <div className="flex items-center space-x-1 px-2 py-1 bg-green-100 rounded-full">
+                                  <CheckCircle className="w-3 h-3 text-green-600" />
+                                  <span className="text-xs text-green-600 font-medium">
+                                    Owner
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-sm text-[#59981a] mt-1">
+                              by {frame.author.display_name} (@
+                              {frame.author.username}) - FID: {frame.author.fid}
+                            </div>
+                            <div className="text-xs text-[#3d550c] mt-1 line-clamp-2">
+                              {frame.manifest.frame?.description ||
+                                frame.manifest.miniapp?.description ||
+                                ""}
+                            </div>
+                          </div>
+                          {selectedFrame === frame && ownershipVerified && (
+                            <CheckCircle className="w-6 h-6 text-green-500" />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Ownership Status */}
+              {selectedFrame && (
+                <div className="mt-4 p-3 bg-[#ecf87f]/20 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    {ownershipVerified ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-red-500" />
+                    )}
+                    <span
+                      className={`text-sm font-medium ${
+                        ownershipVerified ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {ownershipVerified
+                        ? "Mini App selected - You can register this app"
+                        : "You are not the owner of this frame"}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Selected Mini App Details */}
+            {selectedFrame && ownershipVerified && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-[#3d550c] mb-4">
+                  Mini App Details (Auto-filled)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label className="text-sm font-medium text-[#3d550c]">
+                      App Name
+                    </Label>
+                    <div className="mt-1 p-3 bg-gray-50 rounded-md text-[#3d550c]">
+                      {appData.name}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-[#3d550c]">
+                      App ID
+                    </Label>
+                    <div className="mt-1 p-3 bg-gray-50 rounded-md text-[#3d550c]">
+                      {appData.appId}
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Label className="text-sm font-medium text-[#3d550c]">
+                      Description
+                    </Label>
+                    <div className="mt-1 p-3 bg-gray-50 rounded-md text-[#3d550c]">
+                      {appData.description}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-[#3d550c]">
+                      Icon URL
+                    </Label>
+                    <div className="mt-1 p-3 bg-gray-50 rounded-md text-[#3d550c]">
+                      {appData.iconUrl}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Token Configuration */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-[#3d550c] mb-4">
+                Token Configuration
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <Label
+                    htmlFor="appTokenAddress"
+                    className="text-sm font-medium text-[#3d550c]"
+                  >
+                    App Token Address *
+                  </Label>
+                  <Input
+                    id="appTokenAddress"
+                    type="text"
+                    value={appData.appTokenAddress}
+                    onChange={(e) =>
+                      setAppData({
+                        ...appData,
+                        appTokenAddress: e.target.value,
+                      })
+                    }
+                    placeholder="0x..."
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="tokenAmount"
+                    className="text-sm font-medium text-[#3d550c]"
+                  >
+                    Total Token Amount *
+                  </Label>
+                  <Input
+                    id="tokenAmount"
+                    type="text"
+                    value={appData.tokenAmount}
+                    onChange={(e) =>
+                      setAppData({ ...appData, tokenAmount: e.target.value })
+                    }
+                    placeholder="1000"
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-[#59981a] mt-1">
+                    Total tokens to allocate for rewards
+                  </p>
+                </div>
+
+                <div>
+                  <Label
+                    htmlFor="rewardPerReview"
+                    className="text-sm font-medium text-[#3d550c]"
+                  >
+                    Reward Per Review *
+                  </Label>
+                  <Input
+                    id="rewardPerReview"
+                    type="text"
+                    value={appData.rewardPerReview}
+                    onChange={(e) =>
+                      setAppData({
+                        ...appData,
+                        rewardPerReview: e.target.value,
+                      })
+                    }
+                    placeholder="10"
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-[#59981a] mt-1">
+                    Tokens given per review
+                  </p>
+                </div>
+              </div>
+
+              {/* MiniApp URL Input */}
+              <div className="mt-6">
+                <Label
+                  htmlFor="miniappUrl"
+                  className="text-sm font-medium text-[#3d550c]"
+                >
+                  MiniApp URL *
+                </Label>
+                <Input
+                  id="miniappUrl"
+                  type="text"
+                  value={appData.miniappUrl}
+                  onChange={(e) =>
+                    setAppData({
+                      ...appData,
+                      miniappUrl: e.target.value,
+                    })
+                  }
+                  placeholder="https://your-miniapp-url.com"
+                  className="mt-1"
+                />
+                <p className="text-xs text-[#59981a] mt-1">
+                  The URL where users can access your MiniApp
+                </p>
+              </div>
+
+              {/* Token Allowance Status */}
+              {appData.appTokenAddress && appData.tokenAmount && (
+                <div className="mt-6 p-4 bg-[#ecf87f]/20 rounded-lg">
+                  <h4 className="text-sm font-semibold text-[#3d550c] mb-3">
+                    Token Status
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-[#3d550c]">Balance:</span>
+                      <span className="text-sm font-semibold text-[#59981a]">
+                        {checkingAllowance
+                          ? "Checking..."
+                          : formatEther(tokenBalance)}
                       </span>
-                    </>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-[#3d550c]">Allowance:</span>
+                      <span className="text-sm font-semibold text-[#59981a]">
+                        {checkingAllowance
+                          ? "Checking..."
+                          : formatEther(tokenAllowance)}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {checkingAllowance ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#59981a] border-t-transparent"></div>
+                      ) : tokenAllowance >=
+                        parseEther(appData.tokenAmount || "0") ? (
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-red-500" />
+                      )}
+                      <span
+                        className={`text-sm ${
+                          tokenAllowance >=
+                          parseEther(appData.tokenAmount || "0")
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {tokenAllowance >=
+                        parseEther(appData.tokenAmount || "0")
+                          ? "Approved"
+                          : "Needs Approval"}
+                      </span>
+                    </div>
+                  </div>
+                  {tokenAllowance < parseEther(appData.tokenAmount || "0") && (
+                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-sm text-yellow-800 mb-3">
+                        You need to approve tokens before registering. Please
+                        approve at least {appData.tokenAmount} tokens.
+                      </p>
+                      <Button
+                        onClick={handleApproveTokens}
+                        disabled={submitting}
+                        className="bg-[#59981a] hover:bg-[#81b622] text-white px-4 py-2"
+                      >
+                        {submitting ? "Approving..." : "Approve Tokens"}
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
             </div>
 
-            <div>
-              <Label
-                htmlFor="miniappUrl"
-                className="text-[#F2F2F2] roboto-mono-400"
-              >
-                Mini App URL *
-              </Label>
-              <Input
-                id="miniappUrl"
-                type="url"
-                value={appData.miniappUrl}
-                onChange={(e) =>
-                  setAppData((prev) => ({
-                    ...prev,
-                    miniappUrl: e.target.value,
-                  }))
+            {/* Submit Button */}
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSubmit}
+                disabled={
+                  submitting ||
+                  !appData.name ||
+                  !appData.description ||
+                  !appData.miniappUrl ||
+                  !appData.appId ||
+                  !appData.tokenAmount ||
+                  !appData.rewardPerReview ||
+                  !appData.appTokenAddress ||
+                  tokenAllowance < parseEther(appData.tokenAmount || "0") ||
+                  !ownershipVerified
                 }
-                className="mt-2 bg-black/50 border-[#F2F2F2]/30 text-[#F2F2F2] placeholder-[#B6B09F] focus:border-[#F2F2F2] roboto-mono-400"
-                placeholder="https://example.com/miniapp"
-              />
-              <p className="text-[#B6B09F] text-xs mt-2 roboto-mono-400">
-                This is the URL where users will access your mini app
-              </p>
+                className="bg-[#59981a] hover:bg-[#81b622] disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-3"
+              >
+                {submitting ? "Registering..." : "Register App"}
+              </Button>
             </div>
-          </div>
-        </div>
-
-        {/* Submit Button */}
-        <div className="flex justify-center">
-          <Button
-            onClick={handleSubmit}
-            disabled={loading || !context?.user?.fid}
-            className="bg-[#F2F2F2] hover:bg-[#F2F2F2]/80 disabled:bg-[#B6B09F] disabled:cursor-not-allowed rounded-lg px-8 py-3 text-black font-medium shadow-lg shadow-[#F2F2F2]/25 transition-all duration-300 roboto-mono-400"
-          >
-            {loading ? "Registering..." : "Register Mini App"}
-          </Button>
-        </div>
-
-        {!context?.user?.fid && (
-          <div className="text-center">
-            <p className="text-[#B6B09F] text-sm roboto-mono-400">
-              Please connect your wallet to register a mini app
-            </p>
           </div>
         )}
       </div>

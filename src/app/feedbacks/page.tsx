@@ -96,33 +96,6 @@ export default function FeedbacksPage() {
           )}
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
-            <div className="text-xl font-bold text-blue-600">
-              {allApps.length}
-            </div>
-            <div className="text-xs text-gray-600">Total Apps</div>
-          </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
-            <div className="text-xl font-bold text-green-600">
-              {allApps.reduce((sum, app) => sum + app.totalFeedback, 0)}
-            </div>
-            <div className="text-xs text-gray-600">Total Reviews</div>
-          </div>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
-            <div className="text-xl font-bold text-yellow-600">
-              {allApps.length > 0
-                ? (
-                    allApps.reduce((sum, app) => sum + app.averageRating, 0) /
-                    allApps.length
-                  ).toFixed(1)
-                : "0.0"}
-            </div>
-            <div className="text-xs text-gray-600">Average Rating</div>
-          </div>
-        </div>
-
         {/* Apps List */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center space-x-2 mb-6">

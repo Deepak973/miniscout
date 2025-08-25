@@ -1,27 +1,49 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Star, MessageSquare, Edit, Home } from "lucide-react";
+import { Star, MessageSquare, Copy } from "lucide-react";
 import { Button } from "~/components/ui/Button";
-import { MiniApp, Feedback } from "~/lib/types";
 import { useMiniApp } from "@neynar/react";
 import toast from "react-hot-toast";
+import { useContract } from "~/hooks/useContract";
+import { contractReads, App, Feedback } from "~/lib/contracts";
+import { useConnect } from "wagmi";
+import Header from "~/components/ui/Header";
 
 export default function FeedbackPage({
   params,
 }: {
   params: Promise<{ appId: string }>;
 }) {
-  const { context } = useMiniApp();
-  const [app, setApp] = useState<MiniApp | null>(null);
+  const { context: _context } = useMiniApp();
+  const {
+    isConnected,
+    address,
+    submitFeedback,
+    isLoading: _isLoading,
+  } = useContract();
+  const { connect, connectors } = useConnect();
+  const [app, setApp] = useState<(App & { averageRating: number }) | null>(
+    null
+  );
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [userFeedback, setUserFeedback] = useState<Feedback | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [appId, setAppId] = useState<string>("");
+
+  const copyFeedbackUrl = async () => {
+    const feedbackUrl = window.location.href;
+    try {
+      await navigator.clipboard.writeText(feedbackUrl);
+      toast.success("Feedback URL copied to clipboard!");
+    } catch (error) {
+      console.error("Failed to copy URL:", error);
+      toast.error("Failed to copy URL");
+    }
+  };
 
   useEffect(() => {
     const resolveParams = async () => {
@@ -36,32 +58,42 @@ export default function FeedbackPage({
 
     setLoading(true);
     try {
-      // Fetch app details
-      const appResponse = await fetch(`/api/apps?appId=${appId}`);
-      const appData = await appResponse.json();
+      const appIdNumber = parseInt(appId);
+      if (isNaN(appIdNumber)) {
+        toast.error("Invalid app ID");
+        return;
+      }
 
-      if (appData.apps && appData.apps.length > 0) {
-        setApp(appData.apps[0]);
+      const appData = await contractReads.getApp(BigInt(appIdNumber));
+      if (appData && appData.isActive) {
+        setApp({
+          ...appData,
+          averageRating: appData.totalRatings > 0n ? 4.5 : 0,
+        } as App & { averageRating: number });
       } else {
-        console.error("App not found for appId:", appId);
         toast.error("App not found");
         return;
       }
 
-      // Fetch feedbacks
-      const feedbackResponse = await fetch(`/api/feedback?appId=${appId}`);
-      const feedbackData = await feedbackResponse.json();
-      setFeedbacks(feedbackData.feedback || []);
+      const feedbacksData = await contractReads.getAppFeedbacks(
+        BigInt(appIdNumber)
+      );
+      setFeedbacks(feedbacksData);
 
-      // Check if user has already submitted feedback
-      if (context?.user?.fid) {
-        const userFeedback = feedbackData.feedback?.find(
-          (f: Feedback) => f.userFid === context.user.fid
+      if (isConnected && address) {
+        const hasGivenFeedback = await contractReads.hasUserGivenFeedback(
+          BigInt(appIdNumber),
+          address
         );
-        if (userFeedback) {
-          setUserFeedback(userFeedback);
-          setRating(userFeedback.rating);
-          setComment(userFeedback.comment);
+        if (hasGivenFeedback) {
+          const userFeedbackData = feedbacksData.find(
+            (f: Feedback) => f.reviewer.toLowerCase() === address.toLowerCase()
+          );
+          if (userFeedbackData) {
+            setUserFeedback(userFeedbackData);
+            setRating(Number(userFeedbackData.rating));
+            setComment(userFeedbackData.comment);
+          }
         }
       }
     } catch (_error) {
@@ -70,7 +102,7 @@ export default function FeedbackPage({
     } finally {
       setLoading(false);
     }
-  }, [appId, context?.user?.fid]);
+  }, [appId, isConnected, address]);
 
   useEffect(() => {
     if (appId) {
@@ -79,8 +111,8 @@ export default function FeedbackPage({
   }, [appId, fetchAppAndFeedbacks]);
 
   const handleSubmitFeedback = async () => {
-    if (!context?.user?.fid) {
-      toast.error("Please connect your Farcaster account");
+    if (!isConnected || !address) {
+      toast.error("Please connect your wallet first");
       return;
     }
 
@@ -91,69 +123,17 @@ export default function FeedbackPage({
 
     setSubmitting(true);
     try {
-      const response = await fetch("/api/feedback", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          appId,
-          rating,
-          comment: comment.trim(),
-          userFid: context.user.fid,
-          userName: context.user.username,
-          userDisplayName: context.user.displayName,
-          userPfpUrl: context.user.pfpUrl,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success("Feedback submitted successfully!");
-        setEditing(false);
-        fetchAppAndFeedbacks(); // Refresh data
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to submit feedback");
+      const appIdNumber = parseInt(appId);
+      if (isNaN(appIdNumber)) {
+        toast.error("Invalid app ID");
+        return;
       }
-    } catch (_error) {
-      toast.error("Failed to submit feedback");
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
-  const handleUpdateFeedback = async () => {
-    if (!userFeedback?._id) return;
-
-    setSubmitting(true);
-    try {
-      const response = await fetch(`/api/feedback`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          appId,
-          feedbackId: userFeedback._id,
-          rating,
-          comment: comment.trim(),
-          userFid: context?.user?.fid,
-          userName: context?.user?.username,
-          userDisplayName: context?.user?.displayName,
-          userPfpUrl: context?.user?.pfpUrl,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success("Feedback updated successfully!");
-        setEditing(false);
-        fetchAppAndFeedbacks(); // Refresh data
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Failed to update feedback");
-      }
-    } catch (_error) {
-      toast.error("Failed to update feedback");
+      await submitFeedback(BigInt(appIdNumber), rating, comment.trim());
+      toast.success("Feedback submitted successfully!");
+      fetchAppAndFeedbacks();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit feedback");
     } finally {
       setSubmitting(false);
     }
@@ -161,20 +141,11 @@ export default function FeedbackPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#B6B09F]/10 via-black to-[#EAE4D5]/10"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(242,242,242,0.1),transparent_50%)]"></div>
-
-        <div className="flex items-center justify-center h-screen relative z-10">
+      <div className="min-h-screen bg-gradient-to-br from-[#ecf87f]/20 to-[#81b622]/10">
+        <div className="flex items-center justify-center h-screen">
           <div className="text-center">
-            <div className="relative">
-              <div className="animate-spin rounded-full h-16 w-16 border-2 border-[#F2F2F2] mx-auto mb-6"></div>
-              <div className="absolute inset-0 animate-ping rounded-full h-16 w-16 border-2 border-[#F2F2F2] opacity-20"></div>
-            </div>
-            <p className="text-[#F2F2F2] text-lg font-medium roboto-mono-400">
-              Loading app details...
-            </p>
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#59981a] mx-auto mb-4"></div>
+            <p className="text-[#3d550c]">Loading app details...</p>
           </div>
         </div>
       </div>
@@ -183,18 +154,14 @@ export default function FeedbackPage({
 
   if (!app) {
     return (
-      <div className="min-h-screen bg-black relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#B6B09F]/10 via-black to-[#EAE4D5]/10"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(242,242,242,0.1),transparent_50%)]"></div>
-
-        <div className="flex items-center justify-center h-screen relative z-10">
+      <div className="min-h-screen bg-gradient-to-br from-[#ecf87f]/20 to-[#81b622]/10">
+        <div className="flex items-center justify-center h-screen">
           <div className="text-center">
-            <MessageSquare className="w-16 h-16 text-[#B6B09F] mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-[#F2F2F2] mb-2 roboto-mono-400">
+            <MessageSquare className="w-16 h-16 text-[#81b622] mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-[#3d550c] mb-2">
               App Not Found
             </h2>
-            <p className="text-[#B6B09F] roboto-mono-400">
+            <p className="text-[#59981a]">
               The app you&apos;re looking for doesn&apos;t exist.
             </p>
           </div>
@@ -204,104 +171,63 @@ export default function FeedbackPage({
   }
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#B6B09F]/10 via-black to-[#EAE4D5]/10"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(242,242,242,0.1),transparent_50%)]"></div>
-
+    <div className="min-h-screen bg-gradient-to-br from-[#ecf87f]/20 to-[#81b622]/10">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-[#F2F2F2]/20">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-2">
-              <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-[#F2F2F2] to-[#EAE4D5] rounded-full blur opacity-30 animate-pulse"></div>
-                <img
-                  src="/logo.png"
-                  alt="MiniScout"
-                  className="w-8 h-8 rounded-full object-cover relative z-10"
-                />
-              </div>
-              <h1 className="text-lg font-bold text-[#F2F2F2] roboto-mono-400">
-                Feedback
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => (window.location.href = "/")}
-              className="p-2 rounded-lg bg-[#F2F2F2] hover:bg-[#F2F2F2]/80 transition-all duration-300 shadow-lg shadow-[#F2F2F2]/25 text-black"
-            >
-              <Home className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </div>
+      <Header title="Feedback" showBackButton={true} />
 
       {/* Main Content */}
-      <div className="px-4 py-6 space-y-6 relative z-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* App Info */}
-        <div className="bg-black/50 backdrop-blur-xl rounded-xl p-6 border border-[#F2F2F2]/30">
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <div className="absolute -inset-1 bg-gradient-to-r from-[#F2F2F2] to-[#EAE4D5] rounded-lg blur opacity-20"></div>
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
               <img
                 src={app.iconUrl}
                 alt={app.name}
-                className="w-16 h-16 rounded-lg object-cover relative z-10"
+                className="w-16 h-16 rounded-lg object-cover"
                 onError={(e) => {
                   e.currentTarget.src = "/icon.png";
                 }}
               />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-[#F2F2F2] roboto-mono-400">
-                {app.name}
-              </h2>
-              <p className="text-[#B6B09F] text-sm roboto-mono-400">
-                {app.description}
-              </p>
-              <div className="flex items-center space-x-4 mt-2">
-                <div className="flex items-center space-x-1">
-                  <Star className="w-4 h-4 text-[#F2F2F2] fill-current" />
-                  <span className="text-sm text-[#F2F2F2] roboto-mono-400">
-                    {app.averageRating.toFixed(1)}
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold text-[#3d550c]">
+                  {app.name}
+                </h2>
+                <p className="text-[#59981a] text-sm">{app.description}</p>
+                <div className="flex items-center space-x-4 mt-2">
+                  <div className="flex items-center space-x-1">
+                    <Star className="w-4 h-4 text-[#ecf87f] fill-current" />
+                    <span className="text-sm text-[#3d550c]">
+                      {app.averageRating.toFixed(1)}
+                    </span>
+                  </div>
+                  <span className="text-sm text-[#59981a]">
+                    {app.totalRatings.toString()} reviews
                   </span>
                 </div>
-                <span className="text-sm text-[#B6B09F] roboto-mono-400">
-                  {app.totalRatings} reviews
-                </span>
               </div>
             </div>
           </div>
+          <Button
+            onClick={copyFeedbackUrl}
+            className="px-3 py-2 bg-[#81b622]/20 text-[#3d550c] hover:bg-[#81b622]/30"
+            title="Copy feedback URL"
+          >
+            <Copy className="w-4 h-4" />
+          </Button>
         </div>
 
         {/* Feedback Form */}
-        {context?.user?.fid ? (
-          <div className="bg-black/50 backdrop-blur-xl rounded-xl p-6 border border-[#F2F2F2]/30">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-[#F2F2F2] roboto-mono-400">
-                {userFeedback && !editing
-                  ? "Your Review"
-                  : editing
-                  ? "Edit Your Review"
-                  : "Write a Review"}
-              </h3>
-              {userFeedback && !editing && (
-                <button
-                  onClick={() => setEditing(true)}
-                  className="p-2 rounded-lg bg-[#F2F2F2]/10 hover:bg-[#F2F2F2]/20 transition-all duration-300 border border-[#F2F2F2]/30"
-                >
-                  <Edit className="w-4 h-4 text-[#F2F2F2]" />
-                </button>
-              )}
-            </div>
+        {isConnected ? (
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <h3 className="text-lg font-semibold text-[#3d550c] mb-4">
+              {userFeedback ? "Your Review" : "Write a Review"}
+            </h3>
 
-            {(!userFeedback || editing) && (
+            {!userFeedback ? (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#F2F2F2] mb-2 roboto-mono-400">
+                  <label className="block text-sm font-medium text-[#3d550c] mb-2">
                     Your Rating
                   </label>
                   <div className="flex space-x-2">
@@ -309,8 +235,8 @@ export default function FeedbackPage({
                       <button
                         key={star}
                         onClick={() => setRating(star)}
-                        className={`text-2xl transition-colors ${
-                          star <= rating ? "text-yellow-400" : "text-[#B6B09F]"
+                        className={`text-3xl transition-colors ${
+                          star <= rating ? "text-yellow-400" : "text-gray-300"
                         }`}
                       >
                         ★
@@ -320,49 +246,27 @@ export default function FeedbackPage({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#F2F2F2] mb-2 roboto-mono-400">
+                  <label className="block text-sm font-medium text-[#3d550c] mb-2">
                     Your Review
                   </label>
                   <textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    className="w-full p-3 bg-black/50 border border-[#F2F2F2]/30 rounded-lg text-[#F2F2F2] placeholder-[#B6B09F] focus:outline-none focus:border-[#F2F2F2] roboto-mono-400"
+                    className="w-full p-3 border border-[#81b622]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ecf87f]/20"
                     rows={4}
                     placeholder="Share your experience with this app..."
                   />
                 </div>
 
-                <div className="flex space-x-3">
-                  <Button
-                    onClick={
-                      userFeedback ? handleUpdateFeedback : handleSubmitFeedback
-                    }
-                    disabled={submitting || !comment.trim()}
-                    className="bg-[#F2F2F2] hover:bg-[#F2F2F2]/80 disabled:bg-[#B6B09F] disabled:cursor-not-allowed rounded-lg px-6 py-2 text-sm font-medium text-black shadow-lg shadow-[#F2F2F2]/25 transition-all duration-300"
-                  >
-                    {submitting
-                      ? "Submitting..."
-                      : userFeedback
-                      ? "Update Review"
-                      : "Submit Review"}
-                  </Button>
-                  {editing && (
-                    <Button
-                      onClick={() => {
-                        setEditing(false);
-                        setRating(userFeedback?.rating || 5);
-                        setComment(userFeedback?.comment || "");
-                      }}
-                      className="bg-[#F2F2F2]/10 hover:bg-[#F2F2F2]/20 rounded-lg px-6 py-2 text-sm font-medium text-[#F2F2F2] border border-[#F2F2F2]/30 transition-all duration-300"
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                </div>
+                <Button
+                  onClick={handleSubmitFeedback}
+                  disabled={submitting || !comment.trim()}
+                  className="bg-[#59981a] hover:bg-[#81b622] disabled:bg-gray-400 disabled:cursor-not-allowed text-white"
+                >
+                  {submitting ? "Submitting..." : "Submit Review"}
+                </Button>
               </div>
-            )}
-
-            {userFeedback && !editing && (
+            ) : (
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <div className="flex items-center space-x-1">
@@ -370,84 +274,94 @@ export default function FeedbackPage({
                       <Star
                         key={star}
                         className={`w-4 h-4 ${
-                          star <= userFeedback.rating
-                            ? "text-yellow-400 fill-current"
-                            : "text-[#B6B09F]"
+                          star <= Number(userFeedback.rating)
+                            ? "text-[#ecf87f] fill-current"
+                            : "text-gray-300"
                         }`}
                       />
                     ))}
                   </div>
-                  <span className="text-sm text-[#B6B09F] roboto-mono-400">
-                    {new Date(userFeedback.createdAt).toLocaleDateString()}
+                  <span className="text-sm text-[#59981a]">
+                    {new Date(
+                      Number(userFeedback.createdAt) * 1000
+                    ).toLocaleDateString()}
                   </span>
                 </div>
-                <p className="text-[#EAE4D5] text-sm roboto-mono-400">
-                  {userFeedback.comment}
-                </p>
+                <p className="text-[#3d550c]">{userFeedback.comment}</p>
               </div>
             )}
           </div>
         ) : (
-          <div className="bg-black/50 backdrop-blur-xl rounded-xl p-6 text-center border border-[#F2F2F2]/30">
-            <MessageSquare className="w-12 h-12 text-[#B6B09F] mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-[#F2F2F2] mb-2 roboto-mono-400">
+          <div className="bg-[#ecf87f]/30 border border-[#81b622]/30 rounded-lg p-6 mb-8 text-center">
+            <MessageSquare className="w-12 h-12 text-[#81b622] mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-[#3d550c] mb-2">
               Connect to Review
             </h3>
-            <p className="text-[#B6B09F] roboto-mono-400">
-              Please connect your Farcaster account to write a review.
+            <p className="text-[#59981a] mb-4">
+              Connect your wallet to see your earned rewards from reviewing
+              apps.
             </p>
+            <button
+              onClick={() => connect({ connector: connectors[0] })}
+              className="px-6 py-2 bg-[#59981a] text-white rounded-md hover:bg-[#81b622]"
+            >
+              Connect Wallet
+            </button>
           </div>
         )}
 
         {/* All Reviews */}
-        <div className="bg-black/50 backdrop-blur-xl rounded-xl p-6 border border-[#F2F2F2]/30">
-          <h3 className="text-lg font-bold text-[#F2F2F2] mb-4 roboto-mono-400">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-[#3d550c] mb-4">
             All Reviews ({feedbacks.length})
           </h3>
 
           {feedbacks.length === 0 ? (
             <div className="text-center py-8">
-              <MessageSquare className="w-12 h-12 text-[#B6B09F] mx-auto mb-4" />
-              <p className="text-[#B6B09F] roboto-mono-400">
+              <MessageSquare className="w-12 h-12 text-[#81b622] mx-auto mb-4" />
+              <p className="text-[#59981a]">
                 No reviews yet. Be the first to review this app!
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {feedbacks.map((feedback) => (
+              {feedbacks.map((feedback, index) => (
                 <div
-                  key={feedback._id}
-                  className="bg-black/30 backdrop-blur-xl rounded-lg p-4 border border-[#F2F2F2]/20"
+                  key={`${feedback.feedbackId}-${index}`}
+                  className="border border-[#ecf87f]/30 rounded-lg p-4"
                 >
                   <div className="flex items-start space-x-3">
-                    <img
-                      src={feedback.userPfpUrl || "/icon.png"}
-                      alt={feedback.userDisplayName || feedback.userName}
-                      className="w-10 h-10 rounded-full object-cover border border-[#F2F2F2]/30"
-                    />
+                    <div className="w-10 h-10 rounded-full bg-[#ecf87f]/20 flex items-center justify-center">
+                      <span className="text-[#3d550c] text-sm font-medium">
+                        {feedback.reviewer.slice(2, 6).toUpperCase()}
+                      </span>
+                    </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
-                        <h4 className="font-bold text-[#F2F2F2] text-sm roboto-mono-400">
-                          {feedback.userDisplayName || feedback.userName}
+                        <h4 className="font-medium text-[#3d550c] text-sm">
+                          {feedback.reviewer.slice(0, 6)}...
+                          {feedback.reviewer.slice(-4)}
                         </h4>
                         <div className="flex items-center space-x-1">
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star
                               key={star}
                               className={`w-3 h-3 ${
-                                star <= feedback.rating
-                                  ? "text-yellow-400 fill-current"
-                                  : "text-[#B6B09F]"
+                                star <= Number(feedback.rating)
+                                  ? "text-[#ecf87f] fill-current"
+                                  : "text-gray-300"
                               }`}
                             />
                           ))}
                         </div>
                       </div>
-                      <p className="text-[#EAE4D5] text-sm mb-2 roboto-mono-400">
+                      <p className="text-[#3d550c] text-sm mb-2">
                         {feedback.comment}
                       </p>
-                      <span className="text-xs text-[#B6B09F] roboto-mono-400">
-                        {new Date(feedback.createdAt).toLocaleDateString()}
+                      <span className="text-xs text-[#59981a]">
+                        {new Date(
+                          Number(feedback.createdAt) * 1000
+                        ).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
