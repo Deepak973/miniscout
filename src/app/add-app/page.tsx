@@ -396,9 +396,7 @@ export default function AddAppPage() {
             {/* Progress Steps */}
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-[#3d550c]">
-                  App Registration Steps
-                </h2>
+                <h2 className="text-xl font-semibold text-[#3d550c]">Steps</h2>
                 <div className="text-sm text-[#59981a]">
                   Step{" "}
                   {["search", "token-setup", "token-config", "review"].indexOf(
