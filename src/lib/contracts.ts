@@ -1,5 +1,6 @@
 import { createPublicClient, http, parseEther, formatEther } from "viem";
-import { baseSepolia } from "viem/chains";
+import { base } from "viem/chains";
+
 import MiniScoutABI from "~/utils/MiniScoutABI.json";
 
 // Types for contract data
@@ -45,7 +46,7 @@ export const CONTRACT_ADDRESSES = {
 
 // Public client for read operations
 export const publicClient = createPublicClient({
-  chain: baseSepolia,
+  chain: base,
   transport: http(),
 });
 

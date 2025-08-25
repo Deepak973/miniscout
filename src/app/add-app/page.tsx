@@ -18,7 +18,7 @@ import toast from "react-hot-toast";
 import { useContract } from "~/hooks/useContract";
 import { formatEther, parseEther } from "viem";
 import { useConnect, useDisconnect } from "wagmi";
-import { publicClient } from "~/lib/contracts";
+import { CONTRACT_ADDRESSES, publicClient } from "~/lib/contracts";
 import Header from "~/components/ui/Header";
 import TokenDeployment from "~/components/ui/TokenDeployment";
 
@@ -192,7 +192,7 @@ export default function AddAppPage() {
         functionName: "allowance",
         args: [
           address as `0x${string}`,
-          "0xcCEAd9170B4A9ef324aB9304Dc6cC37101a5361E", // MiniScout contract address
+          CONTRACT_ADDRESSES.MINISCOUT, // MiniScout contract address
         ],
       });
 
@@ -231,7 +231,7 @@ export default function AddAppPage() {
       await approveTokens(
         appData.appTokenAddress as `0x${string}`,
         appData.tokenAmount,
-        "0xcCEAd9170B4A9ef324aB9304Dc6cC37101a5361E" // MiniScout contract address
+        CONTRACT_ADDRESSES.MINISCOUT // MiniScout contract address
       );
 
       toast.success("Approval transaction submitted!");
@@ -627,7 +627,14 @@ export default function AddAppPage() {
                   existing token.
                 </p>
 
-                <TokenDeployment onTokenDeployed={handleTokenDeployed} />
+                <TokenDeployment
+                  onTokenDeployed={handleTokenDeployed}
+                  tokenImage={
+                    selectedFrame?.manifest.frame?.icon_url ||
+                    selectedFrame?.manifest.miniapp?.icon_url ||
+                    "/icon.png"
+                  }
+                />
 
                 {/* Navigation Buttons */}
                 <div className="mt-6 flex justify-between">
