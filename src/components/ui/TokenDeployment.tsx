@@ -20,10 +20,12 @@ import {
 
 interface TokenDeploymentProps {
   onTokenDeployed: (tokenAddress: string) => void;
+  tokenImage?: string;
 }
 
 export default function TokenDeployment({
   onTokenDeployed,
+  tokenImage,
 }: TokenDeploymentProps) {
   const { address } = useContract();
   const { sendTransaction, data: hash } = useSendTransaction();
@@ -58,7 +60,7 @@ export default function TokenDeployment({
         symbol: tokenSymbol.trim().toUpperCase(),
         description:
           tokenDescription.trim() || `${tokenName} token for MiniScout rewards`,
-        image: "https://via.placeholder.com/400x400/59981a/ffffff?text=Token",
+        image: tokenImage || "/icon.png",
       };
 
       const args = {

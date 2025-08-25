@@ -35,7 +35,7 @@ export default function FeedbackPage({
   const [appId, setAppId] = useState<string>("");
 
   const copyFeedbackUrl = async () => {
-    const feedbackUrl = window.location.href;
+    const feedbackUrl = `https://farcaster.xyz/miniapps/amt-aKG509bA/miniscout/feedback/${appId}`;
     try {
       await navigator.clipboard.writeText(feedbackUrl);
       toast.success("Feedback URL copied to clipboard!");
