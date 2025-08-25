@@ -334,23 +334,23 @@ export default function AddAppPage() {
               <h3 className="text-lg font-semibold text-[#3d550c] mb-4">
                 Search for Your MiniApp
               </h3>
-              <div className="flex space-x-2 mb-4 items-center">
+              <div className="flex items-center mb-4">
                 <Input
                   type="text"
                   placeholder="Search for your MiniApp..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 text-black text-lg py-3 px-4 h-[50px]"
+                  className="flex-1 text-black text-lg py-3 px-4 h-[50px] rounded-l-lg"
                 />
                 <Button
                   onClick={seachMiniApps}
                   disabled={searching || !searchQuery.trim()}
-                  className="bg-[#59981a] hover:bg-[#81b622] text-white p-2 h-[40px] w-[40px] flex items-center justify-center"
+                  className="bg-[#59981a] hover:bg-[#81b622] text-white h-[50px] w-[50px] flex items-center justify-center rounded-r-lg"
                 >
                   {searching ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Search className="w-4 h-4" />
+                    <Search className="w-5 h-5" />
                   )}
                 </Button>
               </div>
@@ -387,7 +387,7 @@ export default function AddAppPage() {
                         }`}
                         onClick={() => selectFrame(frame)}
                       >
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-start space-x-3">
                           <img
                             src={
                               frame.manifest.frame?.icon_url ||
@@ -395,20 +395,20 @@ export default function AddAppPage() {
                               "/icon.png"
                             }
                             alt="Mini App icon"
-                            className="w-12 h-12 rounded-lg"
+                            className="w-12 h-12 rounded-lg flex-shrink-0"
                             onError={(e) => {
                               e.currentTarget.src = "/icon.png";
                             }}
                           />
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <div className="font-medium text-[#3d550c]">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <div className="font-medium text-[#3d550c] truncate">
                                 {frame.manifest.frame?.name ||
                                   frame.manifest.miniapp?.name ||
                                   frame.title}
                               </div>
                               {isOwner && (
-                                <div className="flex items-center space-x-1 px-2 py-1 bg-green-100 rounded-full">
+                                <div className="flex items-center space-x-1 px-2 py-1 bg-green-100 rounded-full flex-shrink-0">
                                   <CheckCircle className="w-3 h-3 text-green-600" />
                                   <span className="text-xs text-green-600 font-medium">
                                     Owner
@@ -416,18 +416,18 @@ export default function AddAppPage() {
                                 </div>
                               )}
                             </div>
-                            <div className="text-sm text-[#59981a] mt-1">
+                            <div className="text-sm text-[#59981a] mb-1 truncate">
                               by {frame.author.display_name} (@
                               {frame.author.username}) - FID: {frame.author.fid}
                             </div>
-                            <div className="text-xs text-[#3d550c] mt-1 line-clamp-2">
+                            <div className="text-xs text-[#3d550c] line-clamp-2 overflow-hidden">
                               {frame.manifest.frame?.description ||
                                 frame.manifest.miniapp?.description ||
                                 ""}
                             </div>
                           </div>
                           {selectedFrame === frame && ownershipVerified && (
-                            <CheckCircle className="w-6 h-6 text-green-500" />
+                            <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
                           )}
                         </div>
                       </div>
