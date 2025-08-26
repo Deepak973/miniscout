@@ -144,7 +144,7 @@ export default function FeedbackPage({
       <div className="min-h-screen bg-[#0F0E0E]">
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#FAD691] mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#C9CDCF] mx-auto mb-4"></div>
             <p className="text-[#C9CDCF] arimo-400">Loading app details...</p>
           </div>
         </div>

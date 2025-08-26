@@ -92,11 +92,11 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#ecf87f]/20 to-[#81b622]/10">
+      <div className="min-h-screen bg-gradient-to-br from-[#C9CDCF]/20 to-[#C9CDCF]/10">
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#59981a] mx-auto mb-4"></div>
-            <p className="text-[#3d550c]">Loading apps...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#FAD691] mx-auto mb-4"></div>
+            <p className="text-[#FAD691]">Loading apps...</p>
           </div>
         </div>
       </div>
@@ -192,13 +192,13 @@ export default function HomePage() {
                   onClick={() => handleAppClick(app)}
                 >
                   {/* App Header with Image */}
-                  <div className="relative h-48 bg-gradient-to-br from-[#ED775A]/20 to-[#FAD691]/20 p-6 flex flex-col justify-between">
+                  <div className="relative h-40 bg-gradient-to-br from-[#ED775A]/20 to-[#FAD691]/20 p-4 flex flex-col justify-between">
                     <div className="absolute top-4 right-4">
                       <div className="w-3 h-3 bg-[#FAD691] rounded-full animate-pulse"></div>
                     </div>
 
-                    <div className="flex items-center space-x-4">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden shadow-lg border-2 border-[#FAD691]/30">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden shadow-lg border-2 border-[#FAD691]/30">
                         <img
                           src={app.iconUrl}
                           alt={app.name}
@@ -209,7 +209,7 @@ export default function HomePage() {
                         />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-[#FAD691] truncate edu-nsw-act-cursive-600">
+                        <h3 className="text-base font-semibold text-[#FAD691] truncate edu-nsw-act-cursive-600">
                           {app.name}
                         </h3>
                         <p className="text-[#C9CDCF] text-xs mt-1 line-clamp-2 arimo-400">
@@ -220,7 +220,7 @@ export default function HomePage() {
                   </div>
 
                   {/* App Content */}
-                  <div className="p-6 space-y-6">
+                  <div className="p-4 space-y-4">
                     {/* Rating + Reviews */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
@@ -235,8 +235,8 @@ export default function HomePage() {
                     </div>
 
                     {/* Reward Information */}
-                    <div className="p-4 bg-gradient-to-r from-[#ED775A]/10 to-[#FAD691]/10 rounded-lg border border-[#FAD691]/20">
-                      <div className="flex items-center justify-between text-sm mb-2">
+                    <div className="p-3 bg-gradient-to-r from-[#ED775A]/10 to-[#FAD691]/10 rounded-lg border border-[#FAD691]/20">
+                      <div className="flex items-center justify-between text-sm mb-1">
                         <span className="text-[#FAD691] font-medium arimo-600">
                           Rewards:
                         </span>
@@ -258,13 +258,13 @@ export default function HomePage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex flex-col space-y-3">
+                    <div className="flex flex-col space-y-2">
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
                           window.location.href = `/feedback/${app.appId}`;
                         }}
-                        className="w-full bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 arimo-600 py-3 rounded-lg border border-[#FAD691]/30 transition-all duration-300 hover:scale-105"
+                        className="w-full bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 arimo-600 py-2 rounded-lg border border-[#FAD691]/30 transition-all duration-300 hover:scale-105"
                       >
                         Review
                       </Button>
@@ -274,20 +274,22 @@ export default function HomePage() {
                             e.stopPropagation();
                             copyFeedbackUrl(app.appId.toString());
                           }}
-                          className="flex-1 bg-[#ED775A]/20 text-[#FAD691] hover:bg-[#ED775A]/30 arimo-500 py-3 rounded-lg border border-[#ED775A]/30 transition-all duration-300 hover:scale-105"
+                          className="flex-1 bg-[#ED775A]/20 text-[#FAD691] hover:bg-[#ED775A]/30 arimo-500 py-2 rounded-lg border border-[#ED775A]/30 transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-1"
                           title="Copy feedback URL"
                         >
-                          <Copy className="w-4 h-4" />
+                          <Copy className="w-3 h-3" />
+                          <span className="text-xs">Copy</span>
                         </Button>
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
                             window.open(app.miniappUrl, "_blank");
                           }}
-                          className="flex-1 bg-[#ED775A] text-white hover:bg-[#FAD691] hover:text-[#0F0E0E] arimo-600 py-3 rounded-lg transition-all duration-300 hover:scale-105"
+                          className="flex-1 bg-[#ED775A] text-white hover:bg-[#FAD691] hover:text-[#0F0E0E] arimo-600 py-2 rounded-lg transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-1"
                           title="Open MiniApp"
                         >
-                          <ExternalLink className="w-4 h-4" />
+                          <ExternalLink className="w-3 h-3" />
+                          <span className="text-xs">Open</span>
                         </Button>
                       </div>
                     </div>
