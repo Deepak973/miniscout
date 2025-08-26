@@ -52,20 +52,20 @@ export default function MyAppsPage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#ecf87f]/20 to-[#81b622]/10">
+      <div className="min-h-screen bg-[#0F0E0E]">
         <Header title="My Apps" showBackButton={true} />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-[#ecf87f]/30 border border-[#81b622]/30 rounded-lg p-8 text-center">
-            <MessageSquare className="w-16 h-16 text-[#81b622] mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-[#3d550c] mb-2">
+          <div className="bg-[#ED775A]/20 border border-[#FAD691]/30 rounded-lg p-8 text-center">
+            <MessageSquare className="w-16 h-16 text-[#FAD691] mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
               Connect to View Your Apps
             </h2>
-            <p className="text-[#59981a] mb-6">
+            <p className="text-[#C9CDCF] mb-6 arimo-400">
               Connect your wallet to see the apps you&apos;ve registered.
             </p>
             <button
               onClick={() => connect({ connector: connectors[0] })}
-              className="px-6 py-3 bg-[#59981a] text-white rounded-md hover:bg-[#81b622]"
+              className="px-6 py-3 bg-[#ED775A] text-white rounded-md hover:bg-[#FAD691] hover:text-[#0F0E0E] arimo-600"
             >
               Connect Wallet
             </button>
@@ -76,109 +76,128 @@ export default function MyAppsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#ecf87f]/20 to-[#81b622]/10">
+    <div className="min-h-screen bg-[#0F0E0E]">
       <Header title="My Apps" showBackButton={true} />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold text-[#81b622] flex-1">My Apps</h1>
+          <h1 className="text-2xl font-bold text-[#FAD691] flex-1 edu-nsw-act-cursive-600">
+            My Apps
+          </h1>
           <button
             onClick={handleAddNewApp}
-            className="p-2 bg-[#59981a] hover:bg-[#81b622] text-white rounded-md flex items-center justify-center"
+            className="p-3 bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white rounded-full flex items-center justify-center w-12 h-12 shadow-lg transition-all duration-300 hover:scale-110"
           >
-            +
+            <span className="text-xl font-bold">+</span>
           </button>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#59981a] mx-auto mb-4"></div>
-              <p className="text-[#3d550c]">Loading your apps...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#FAD691] mx-auto mb-4"></div>
+              <p className="text-[#C9CDCF] arimo-400">Loading your apps...</p>
             </div>
           </div>
         ) : myApps.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <MessageSquare className="w-16 h-16 text-[#81b622] mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-[#3d550c] mb-2">
+          <div className="bg-[#ED775A]/10 rounded-lg shadow-lg p-12 text-center border border-[#FAD691]/30">
+            <MessageSquare className="w-16 h-16 text-[#FAD691] mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
               No Apps Found
             </h3>
-            <p className="text-[#59981a] mb-6">
+            <p className="text-[#C9CDCF] mb-6 arimo-400">
               You haven&apos;t registered any apps yet. Start by adding your
               first mini app.
             </p>
             <Button
               onClick={handleAddNewApp}
-              className="bg-[#59981a] hover:bg-[#81b622] text-white"
+              className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white arimo-600 px-8 py-3 rounded-lg shadow-lg transition-all duration-300 hover:scale-105"
             >
               Add Your First App
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {myApps.map((app) => (
               <div
                 key={app.appId.toString()}
-                className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow border border-[#ecf87f]/30"
+                className="bg-[#ED775A]/10 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-500 border border-[#FAD691]/30 hover:border-[#FAD691]/60 group overflow-hidden"
               >
-                <div className="p-6">
-                  {/* Image, Title and Description in one column */}
-                  <div className="flex flex-col items-start">
-                    <img
-                      src={app.iconUrl}
-                      alt={app.name}
-                      className="w-16 h-16 rounded-lg object-cover mb-3"
-                      onError={(e) => {
-                        e.currentTarget.src = "/icon.png";
-                      }}
-                    />
-                    <h3 className="text-xl font-semibold text-[#3d550c] truncate">
-                      {app.name}
-                    </h3>
-                    <p className="text-[#59981a] text-sm mt-1 line-clamp-2">
-                      {app.description}
-                    </p>
+                {/* App Header with Image */}
+                <div className="relative h-48 bg-gradient-to-br from-[#ED775A]/20 to-[#FAD691]/20 p-6 flex flex-col justify-between">
+                  <div className="absolute top-4 right-4">
+                    <div className="w-3 h-3 bg-[#FAD691] rounded-full animate-pulse"></div>
                   </div>
 
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 mt-4">
-                    <div className="text-center p-3 bg-[#ecf87f]/20 rounded-lg">
-                      <div className="text-lg font-bold text-[#3d550c]">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden shadow-lg border-2 border-[#FAD691]/30">
+                      <img
+                        src={app.iconUrl}
+                        alt={app.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/icon.png";
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-[#FAD691] truncate edu-nsw-act-cursive-600">
+                        {app.name}
+                      </h3>
+                      <p className="text-[#C9CDCF] text-xs mt-1 line-clamp-2 arimo-400">
+                        {app.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* App Content */}
+                <div className="p-6 space-y-6">
+                  {/* Stats Cards */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center p-3 bg-[#FAD691]/10 rounded-lg border border-[#FAD691]/20 hover:bg-[#FAD691]/20 transition-colors">
+                      <div className="text-lg font-bold text-[#FAD691] arimo-700">
                         {app.totalRatings.toString()}
                       </div>
-                      <div className="text-xs text-[#59981a]">Reviews</div>
+                      <div className="text-xs text-[#C9CDCF] arimo-400">
+                        Reviews
+                      </div>
                     </div>
-                    <div className="text-center p-3 bg-[#ecf87f]/20 rounded-lg">
-                      <div className="text-lg font-bold text-[#3d550c]">
+                    <div className="text-center p-3 bg-[#FAD691]/10 rounded-lg border border-[#FAD691]/20 hover:bg-[#FAD691]/20 transition-colors">
+                      <div className="text-lg font-bold text-[#FAD691] arimo-700">
                         {app.averageRating.toFixed(1)}
                       </div>
-                      <div className="text-xs text-[#59981a]">Rating</div>
+                      <div className="text-xs text-[#C9CDCF] arimo-400">
+                        Rating
+                      </div>
                     </div>
-                    <div className="text-center p-3 bg-[#ecf87f]/20 rounded-lg">
-                      <div className="text-lg font-bold text-[#3d550c]">
+                    <div className="text-center p-3 bg-[#FAD691]/10 rounded-lg border border-[#FAD691]/20 hover:bg-[#FAD691]/20 transition-colors">
+                      <div className="text-lg font-bold text-[#FAD691] arimo-700">
                         {formatEther(app.escrowAmount)}
                       </div>
-                      <div className="text-xs text-[#59981a]">Available</div>
+                      <div className="text-xs text-[#C9CDCF] arimo-400">
+                        Available
+                      </div>
                     </div>
                   </div>
 
                   {/* Reward Info */}
-                  <div className="mt-4 p-3 bg-[#ecf87f]/20 rounded-lg">
+                  <div className="p-4 bg-gradient-to-r from-[#ED775A]/10 to-[#FAD691]/10 rounded-lg border border-[#FAD691]/20">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-[#3d550c] font-medium">
+                      <span className="text-[#FAD691] font-medium arimo-600">
                         Reward per review:
                       </span>
-                      <span className="text-[#59981a] font-semibold">
+                      <span className="text-[#C9CDCF] font-semibold arimo-600">
                         {formatEther(app.rewardPerReview)} tokens
                       </span>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex space-x-3 mt-6">
+                  <div className="flex flex-col space-y-3">
                     <Button
                       onClick={() => handleAppClick(app)}
-                      className="flex-1 bg-[#59981a] text-white hover:bg-[#81b622]"
+                      className="w-full bg-[#ED775A] text-white hover:bg-[#FAD691] hover:text-[#0F0E0E] arimo-600 py-3 rounded-lg shadow-lg transition-all duration-300 hover:scale-105"
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Open App
@@ -187,7 +206,7 @@ export default function MyAppsPage() {
                       onClick={() =>
                         (window.location.href = `/feedback/${app.appId}`)
                       }
-                      className="flex-1 bg-[#ecf87f]/20 text-[#3d550c] hover:bg-[#ecf87f]/30"
+                      className="w-full bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 arimo-600 py-3 rounded-lg border border-[#FAD691]/30 transition-all duration-300 hover:scale-105"
                     >
                       View Reviews
                     </Button>

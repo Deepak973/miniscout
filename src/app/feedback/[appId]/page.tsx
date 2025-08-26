@@ -141,11 +141,11 @@ export default function FeedbackPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#ecf87f]/20 to-[#81b622]/10">
+      <div className="min-h-screen bg-[#0F0E0E]">
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#59981a] mx-auto mb-4"></div>
-            <p className="text-[#3d550c]">Loading app details...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#FAD691] mx-auto mb-4"></div>
+            <p className="text-[#C9CDCF] arimo-400">Loading app details...</p>
           </div>
         </div>
       </div>
@@ -154,14 +154,14 @@ export default function FeedbackPage({
 
   if (!app) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#ecf87f]/20 to-[#81b622]/10">
+      <div className="min-h-screen bg-[#0F0E0E]">
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
-            <MessageSquare className="w-16 h-16 text-[#81b622] mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-[#3d550c] mb-2">
+            <MessageSquare className="w-16 h-16 text-[#FAD691] mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
               App Not Found
             </h2>
-            <p className="text-[#59981a]">
+            <p className="text-[#C9CDCF] arimo-400">
               The app you&apos;re looking for doesn&apos;t exist.
             </p>
           </div>
@@ -171,14 +171,14 @@ export default function FeedbackPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#ecf87f]/20 to-[#81b622]/10">
+    <div className="min-h-screen bg-[#0F0E0E]">
       {/* Header */}
       <Header title="Feedback" showBackButton={true} />
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* App Info */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="bg-[#ED775A]/10 rounded-lg shadow p-6 mb-8 border border-[#FAD691]/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <img
@@ -190,18 +190,20 @@ export default function FeedbackPage({
                 }}
               />
               <div className="flex-1">
-                <h2 className="text-xl font-semibold text-[#3d550c]">
+                <h2 className="text-xl font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
                   {app.name}
                 </h2>
-                <p className="text-[#59981a] text-sm">{app.description}</p>
+                <p className="text-[#C9CDCF] text-sm arimo-400">
+                  {app.description}
+                </p>
                 <div className="flex items-center space-x-4 mt-2">
                   <div className="flex items-center space-x-1">
-                    <Star className="w-4 h-4 text-[#ecf87f] fill-current" />
-                    <span className="text-sm text-[#3d550c]">
+                    <Star className="w-4 h-4 text-[#FAD691] fill-current" />
+                    <span className="text-sm text-[#FAD691] arimo-500">
                       {app.averageRating.toFixed(1)}
                     </span>
                   </div>
-                  <span className="text-sm text-[#59981a]">
+                  <span className="text-sm text-[#C9CDCF] arimo-400">
                     {app.totalRatings.toString()} reviews
                   </span>
                 </div>
@@ -210,7 +212,7 @@ export default function FeedbackPage({
           </div>
           <Button
             onClick={copyFeedbackUrl}
-            className="px-3 py-2 bg-[#81b622]/20 text-[#3d550c] hover:bg-[#81b622]/30"
+            className="px-3 py-2 bg-[#ED775A]/20 text-[#FAD691] hover:bg-[#ED775A]/30 arimo-500"
             title="Copy feedback URL"
           >
             <Copy className="w-4 h-4" />
@@ -219,15 +221,15 @@ export default function FeedbackPage({
 
         {/* Feedback Form */}
         {isConnected ? (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h3 className="text-lg font-semibold text-[#3d550c] mb-4">
+          <div className="bg-[#ED775A]/10 rounded-lg shadow p-6 mb-8 border border-[#FAD691]/30">
+            <h3 className="text-lg font-semibold text-[#FAD691] mb-4 edu-nsw-act-cursive-600">
               {userFeedback ? "Your Review" : "Write a Review"}
             </h3>
 
             {!userFeedback ? (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#3d550c] mb-2">
+                  <label className="block text-sm font-medium text-[#FAD691] mb-2 arimo-600">
                     Your Rating
                   </label>
                   <div className="flex space-x-2">
@@ -236,7 +238,7 @@ export default function FeedbackPage({
                         key={star}
                         onClick={() => setRating(star)}
                         className={`text-3xl transition-colors ${
-                          star <= rating ? "text-yellow-400" : "text-gray-300"
+                          star <= rating ? "text-[#FAD691]" : "text-gray-400"
                         }`}
                       >
                         ★
@@ -246,13 +248,13 @@ export default function FeedbackPage({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#3d550c] mb-2">
+                  <label className="block text-sm font-medium text-[#FAD691] mb-2 arimo-600">
                     Your Review
                   </label>
                   <textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    className="w-full p-3 border border-[#81b622]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ecf87f]/20"
+                    className="w-full p-3 border border-[#FAD691]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FAD691]/20"
                     rows={4}
                     placeholder="Share your experience with this app..."
                   />
@@ -261,7 +263,7 @@ export default function FeedbackPage({
                 <Button
                   onClick={handleSubmitFeedback}
                   disabled={submitting || !comment.trim()}
-                  className="bg-[#59981a] hover:bg-[#81b622] disabled:bg-gray-400 disabled:cursor-not-allowed text-white"
+                  className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] disabled:bg-gray-400 disabled:cursor-not-allowed text-white arimo-600"
                 >
                   {submitting ? "Submitting..." : "Submit Review"}
                 </Button>
@@ -275,35 +277,37 @@ export default function FeedbackPage({
                         key={star}
                         className={`w-4 h-4 ${
                           star <= Number(userFeedback.rating)
-                            ? "text-[#ecf87f] fill-current"
-                            : "text-gray-300"
+                            ? "text-[#FAD691] fill-current"
+                            : "text-gray-400"
                         }`}
                       />
                     ))}
                   </div>
-                  <span className="text-sm text-[#59981a]">
+                  <span className="text-sm text-[#C9CDCF] arimo-400">
                     {new Date(
                       Number(userFeedback.createdAt) * 1000
                     ).toLocaleDateString()}
                   </span>
                 </div>
-                <p className="text-[#3d550c]">{userFeedback.comment}</p>
+                <p className="text-[#C9CDCF] arimo-400">
+                  {userFeedback.comment}
+                </p>
               </div>
             )}
           </div>
         ) : (
-          <div className="bg-[#ecf87f]/30 border border-[#81b622]/30 rounded-lg p-6 mb-8 text-center">
-            <MessageSquare className="w-12 h-12 text-[#81b622] mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-[#3d550c] mb-2">
+          <div className="bg-[#ED775A]/20 border border-[#FAD691]/30 rounded-lg p-6 mb-8 text-center">
+            <MessageSquare className="w-12 h-12 text-[#FAD691] mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
               Connect to Review
             </h3>
-            <p className="text-[#59981a] mb-4">
+            <p className="text-[#C9CDCF] mb-4 arimo-400">
               Connect your wallet to see your earned rewards from reviewing
               apps.
             </p>
             <button
               onClick={() => connect({ connector: connectors[0] })}
-              className="px-6 py-2 bg-[#59981a] text-white rounded-md hover:bg-[#81b622]"
+              className="px-6 py-2 bg-[#ED775A] text-white rounded-md hover:bg-[#FAD691] hover:text-[#0F0E0E] arimo-600"
             >
               Connect Wallet
             </button>
@@ -311,15 +315,15 @@ export default function FeedbackPage({
         )}
 
         {/* All Reviews */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-[#3d550c] mb-4">
+        <div className="bg-[#ED775A]/10 rounded-lg shadow p-6 border border-[#FAD691]/30">
+          <h3 className="text-lg font-semibold text-[#FAD691] mb-4 edu-nsw-act-cursive-600">
             All Reviews ({feedbacks.length})
           </h3>
 
           {feedbacks.length === 0 ? (
             <div className="text-center py-8">
-              <MessageSquare className="w-12 h-12 text-[#81b622] mx-auto mb-4" />
-              <p className="text-[#59981a]">
+              <MessageSquare className="w-12 h-12 text-[#FAD691] mx-auto mb-4" />
+              <p className="text-[#C9CDCF] arimo-400">
                 No reviews yet. Be the first to review this app!
               </p>
             </div>
@@ -328,17 +332,17 @@ export default function FeedbackPage({
               {feedbacks.map((feedback, index) => (
                 <div
                   key={`${feedback.feedbackId}-${index}`}
-                  className="border border-[#ecf87f]/30 rounded-lg p-4"
+                  className="border border-[#FAD691]/30 rounded-lg p-4 bg-[#ED775A]/5"
                 >
                   <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-[#ecf87f]/20 flex items-center justify-center">
-                      <span className="text-[#3d550c] text-sm font-medium">
+                    <div className="w-10 h-10 rounded-full bg-[#FAD691]/20 flex items-center justify-center">
+                      <span className="text-[#FAD691] text-sm font-medium arimo-600">
                         {feedback.reviewer.slice(2, 6).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
-                        <h4 className="font-medium text-[#3d550c] text-sm">
+                        <h4 className="font-medium text-[#FAD691] text-sm arimo-600">
                           {feedback.reviewer.slice(0, 6)}...
                           {feedback.reviewer.slice(-4)}
                         </h4>
@@ -348,17 +352,17 @@ export default function FeedbackPage({
                               key={star}
                               className={`w-3 h-3 ${
                                 star <= Number(feedback.rating)
-                                  ? "text-[#ecf87f] fill-current"
-                                  : "text-gray-300"
+                                  ? "text-[#FAD691] fill-current"
+                                  : "text-gray-400"
                               }`}
                             />
                           ))}
                         </div>
                       </div>
-                      <p className="text-[#3d550c] text-sm mb-2">
+                      <p className="text-[#C9CDCF] text-sm mb-2 arimo-400">
                         {feedback.comment}
                       </p>
-                      <span className="text-xs text-[#59981a]">
+                      <span className="text-xs text-[#C9CDCF] arimo-400">
                         {new Date(
                           Number(feedback.createdAt) * 1000
                         ).toLocaleDateString()}

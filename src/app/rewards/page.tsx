@@ -112,21 +112,21 @@ export default function RewardsPage() {
 
   if (!isConnected) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#ecf87f]/20 to-[#81b622]/10">
+      <div className="min-h-screen bg-[#0F0E0E]">
         <Header title="My Rewards" showBackButton={true} />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-[#ecf87f]/30 border border-[#81b622]/30 rounded-lg p-8 text-center">
-            <Gift className="w-16 h-16 text-[#81b622] mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-[#3d550c] mb-2">
+          <div className="bg-[#ED775A]/20 border border-[#FAD691]/30 rounded-lg p-8 text-center">
+            <Gift className="w-16 h-16 text-[#FAD691] mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
               Connect to View Rewards
             </h2>
-            <p className="text-[#59981a] mb-6">
+            <p className="text-[#C9CDCF] mb-6 arimo-400">
               Connect your wallet to see your earned rewards from reviewing
               apps.
             </p>
             <button
               onClick={() => connect({ connector: connectors[0] })}
-              className="px-3 py-1.5 text-sm bg-[#59981a] text-white rounded-md hover:bg-[#81b622]"
+              className="px-3 py-1.5 text-sm bg-[#ED775A] text-white rounded-md hover:bg-[#FAD691] hover:text-[#0F0E0E] arimo-600"
             >
               Connect Wallet
             </button>
@@ -137,19 +137,19 @@ export default function RewardsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#ecf87f]/20 to-[#81b622]/10">
+    <div className="min-h-screen bg-[#0F0E0E]">
       <Header title="My Rewards" showBackButton={true} />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with refresh button */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold text-[#81b622] flex-1">
+          <h1 className="text-2xl font-bold text-[#FAD691] flex-1 edu-nsw-act-cursive-600">
             My Rewards
           </h1>
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="p-2 bg-[#59981a] hover:bg-[#81b622] text-white rounded-md flex items-center justify-center"
+            className="p-2 bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white rounded-md flex items-center justify-center"
           >
             <RefreshCw
               className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
@@ -160,8 +160,8 @@ export default function RewardsPage() {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#59981a] mx-auto mb-4"></div>
-              <p className="text-[#3d550c]">Loading rewards...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#FAD691] mx-auto mb-4"></div>
+              <p className="text-[#C9CDCF] arimo-400">Loading rewards...</p>
             </div>
           </div>
         ) : (
@@ -170,18 +170,18 @@ export default function RewardsPage() {
 
             {/* Individual Token Rewards */}
             {tokenRewards.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-[#3d550c] mb-4">
+              <div className="bg-[#ED775A]/10 rounded-lg shadow p-6 border border-[#FAD691]/30">
+                <h2 className="text-lg font-semibold text-[#FAD691] mb-4 edu-nsw-act-cursive-600">
                   Token Breakdown
                 </h2>
                 <div className="space-y-4">
                   {tokenRewards.map((tokenReward, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-4 border border-[#ecf87f]/30 rounded-lg"
+                      className="flex items-center justify-between p-4 border border-[#FAD691]/30 rounded-lg bg-[#ED775A]/5"
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-[#ecf87f]/20 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                        <div className="w-12 h-12 bg-[#FAD691]/20 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                           {tokenReward.appInfo ? (
                             <img
                               src={tokenReward.appInfo.iconUrl}
@@ -192,12 +192,12 @@ export default function RewardsPage() {
                               }}
                             />
                           ) : (
-                            <Gift className="w-6 h-6 text-[#81b622]" />
+                            <Gift className="w-6 h-6 text-[#ED775A]" />
                           )}
                         </div>
                         <div>
                           <div className="flex items-center space-x-2">
-                            <div className="font-medium text-[#3d550c]">
+                            <div className="font-medium text-[#FAD691] arimo-600">
                               {tokenReward.appInfo ? (
                                 tokenReward.appInfo.name
                               ) : (
@@ -208,7 +208,7 @@ export default function RewardsPage() {
                               )}
                             </div>
                             <Copy
-                              className="w-4 h-4 text-[#59981a] cursor-pointer hover:text-[#3d550c]"
+                              className="w-4 h-4 text-[#C9CDCF] cursor-pointer hover:text-[#FAD691]"
                               onClick={() => {
                                 navigator.clipboard.writeText(
                                   tokenReward.tokenAddress
@@ -220,11 +220,11 @@ export default function RewardsPage() {
                             />
                           </div>
                           {tokenReward.appInfo && (
-                            <div className="text-sm text-[#59981a] line-clamp-1">
+                            <div className="text-sm text-[#C9CDCF] line-clamp-1 arimo-400">
                               {tokenReward.appInfo.description}
                             </div>
                           )}
-                          <div className="text-xs text-[#59981a]">
+                          <div className="text-xs text-[#C9CDCF] arimo-400">
                             Last updated:{" "}
                             {new Date(
                               Number(tokenReward.lastUpdated) * 1000
@@ -236,20 +236,22 @@ export default function RewardsPage() {
                                 href="https://farcaster.xyz/miniapps/UOg1Ub-TqBku/kondo"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs text-[#59981a] hover:text-[#3d550c] underline"
+                                className="text-xs text-[#C9CDCF] hover:text-[#FAD691] underline arimo-400"
                               >
                                 Convert to USDC
                               </a>
-                              <span className="text-xs text-[#59981a]">•</span>
+                              <span className="text-xs text-[#C9CDCF] arimo-400">
+                                •
+                              </span>
                             </div>
                           )}
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-semibold text-[#3d550c]">
+                        <div className="font-semibold text-[#FAD691] arimo-600">
                           {formatEther(tokenReward.totalEarned)} earned
                         </div>
-                        <div className="text-sm text-[#59981a]">
+                        <div className="text-sm text-[#C9CDCF] arimo-400">
                           {formatEther(tokenReward.balance)} available
                         </div>
                       </div>
@@ -260,30 +262,30 @@ export default function RewardsPage() {
             )}
 
             {/* How to Earn More */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-[#3d550c] mb-4">
+            <div className="bg-[#ED775A]/10 rounded-lg shadow p-6 border border-[#FAD691]/30">
+              <h2 className="text-lg font-semibold text-[#FAD691] mb-4 edu-nsw-act-cursive-600">
                 How to Earn More
               </h2>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <TrendingUp className="w-5 h-5 text-[#81b622] mt-0.5" />
+                  <TrendingUp className="w-5 h-5 text-[#ED775A] mt-0.5" />
                   <div>
-                    <div className="font-medium text-[#3d550c]">
+                    <div className="font-medium text-[#FAD691] arimo-600">
                       Review More Apps
                     </div>
-                    <div className="text-sm text-[#59981a]">
+                    <div className="text-sm text-[#C9CDCF] arimo-400">
                       Submit detailed reviews for apps to earn both app tokens
                       and protocol tokens.
                     </div>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <Gift className="w-5 h-5 text-[#81b622] mt-0.5" />
+                  <Gift className="w-5 h-5 text-[#ED775A] mt-0.5" />
                   <div>
-                    <div className="font-medium text-[#3d550c]">
+                    <div className="font-medium text-[#FAD691] arimo-600">
                       Quality Reviews
                     </div>
-                    <div className="text-sm text-[#59981a]">
+                    <div className="text-sm text-[#C9CDCF] arimo-400">
                       Provide helpful and detailed feedback to earn more
                       rewards.
                     </div>

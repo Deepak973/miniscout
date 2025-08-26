@@ -40,25 +40,27 @@ export default function TokenDeployment({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-[#ED775A]/10 rounded-lg shadow p-6 border border-[#FAD691]/30">
       <div className="flex items-center space-x-2 mb-4">
-        <Coins className="w-5 h-5 text-[#59981a]" />
-        <h3 className="text-lg font-semibold text-[#3d550c]">Token Setup</h3>
+        <Coins className="w-5 h-5 text-[#ED775A]" />
+        <h3 className="text-lg font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
+          Token Setup
+        </h3>
       </div>
 
-      <p className="text-sm text-[#59981a] mb-4">
+      <p className="text-sm text-[#C9CDCF] mb-4 arimo-400">
         Enter your existing token address if you already have a launched token.
       </p>
 
       {/* Coming Soon Notice */}
-      <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <div className="mb-6 p-4 bg-[#FAD691]/20 border border-[#FAD691]/30 rounded-lg">
         <div className="flex items-center space-x-2">
-          <Coins className="w-5 h-5 text-yellow-600" />
+          <Coins className="w-5 h-5 text-[#FAD691]" />
           <div>
-            <h4 className="text-sm font-medium text-yellow-800">
+            <h4 className="text-sm font-medium text-[#FAD691] arimo-600">
               Zora Token Deployment
             </h4>
-            <p className="text-xs text-yellow-700">
+            <p className="text-xs text-[#C9CDCF] arimo-400">
               Direct token deployment on Zora is coming soon. For now, please
               use an existing token address.
             </p>
@@ -70,7 +72,7 @@ export default function TokenDeployment({
         <div>
           <Label
             htmlFor="manualTokenAddress"
-            className="text-sm font-medium text-[#3d550c]"
+            className="text-sm font-medium text-[#FAD691] arimo-600"
           >
             Token Contract Address *
           </Label>
@@ -82,7 +84,7 @@ export default function TokenDeployment({
             placeholder="0x..."
             className="mt-1"
           />
-          <p className="text-xs text-[#59981a] mt-1">
+          <p className="text-xs text-[#C9CDCF] mt-1 arimo-400">
             Enter the address of your existing ERC-20 token
           </p>
         </div>
@@ -91,7 +93,7 @@ export default function TokenDeployment({
           <Button
             onClick={handleManualTokenAddress}
             disabled={!manualTokenAddress.trim()}
-            className="w-full bg-[#59981a] hover:bg-[#81b622] text-white"
+            className="w-full bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white arimo-600"
           >
             Use This Token
           </Button>

@@ -25,34 +25,59 @@
 @tailwind utilities;
 
 :root {
-  --background: #000000;
-  --foreground: #f2f2f2;
-  --primary: #f2f2f2;
-  --secondary: #eae4d5;
-  --accent: #b6b09f;
-  --text-primary: #f2f2f2;
-  --text-secondary: #eae4d5;
-  --text-muted: #b6b09f;
+  --background: #0f0e0e;
+  --foreground: #c9cdcf;
+  --primary: #ed775a;
+  --secondary: #fad691;
+  --accent: #ed775a;
+  --text-primary: #c9cdcf;
+  --text-secondary: #fad691;
+  --text-muted: #c9cdcf;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #000000;
-    --foreground: #f2f2f2;
-    --primary: #f2f2f2;
-    --secondary: #eae4d5;
-    --accent: #b6b09f;
-    --text-primary: #f2f2f2;
-    --text-secondary: #eae4d5;
-    --text-muted: #b6b09f;
+    --background: #0f0e0e;
+    --foreground: #c9cdcf;
+    --primary: #ed775a;
+    --secondary: #fad691;
+    --accent: #ed775a;
+    --text-primary: #c9cdcf;
+    --text-secondary: #fad691;
+    --text-muted: #c9cdcf;
   }
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: "Roboto Mono", monospace;
+  font-family: "Arimo", sans-serif;
   font-weight: 400;
+  font-style: normal;
+}
+
+/* Arimo font classes */
+.arimo-400 {
+  font-family: "Arimo", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.arimo-500 {
+  font-family: "Arimo", sans-serif;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.arimo-600 {
+  font-family: "Arimo", sans-serif;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.arimo-700 {
+  font-family: "Arimo", sans-serif;
+  font-weight: 700;
   font-style: normal;
 }
 

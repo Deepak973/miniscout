@@ -25,7 +25,7 @@ export default async function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Edu+NSW+ACT+Cursive:wght@400..700&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,400..700;1,400..700&family=Edu+NSW+ACT+Cursive:wght@400..700&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
           rel="stylesheet"
         />
       </head>
