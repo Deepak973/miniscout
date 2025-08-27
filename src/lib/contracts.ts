@@ -3,7 +3,7 @@ import { baseSepolia } from "viem/chains";
 import MINISCOUT_ABI from "../utils/MiniScoutABI.json";
 
 export const CONTRACT_ADDRESSES = {
-  MINISCOUT: "0xeD441aaFa5316a81B30d6FfcD901B1DB271B2aB1" as `0x${string}`, // Update with your deployed address
+  MINISCOUT: "0x6eEC7174fC2ec84aBe3b83bCa49Bc62B98Cf28fF" as `0x${string}`, // Update with your deployed address
   PROTOCOL_TOKEN: "0xfa112a5eB23e0Cc31E11d7a98CC098266d7A2244" as `0x${string}`, // Update with your protocol token address
 };
 
@@ -110,6 +110,12 @@ export const contractReads = {
       functionName: "getUserFeedbacks",
       args: [userAddress],
     })) as [Feedback[], `0x${string}`[]];
+
+    console.log(feedbacks, "feedbacks");
+
+    if (feedbacks.length === 0) {
+      return [];
+    }
     return feedbacks.map((feedback: Feedback, index: number) => ({
       feedback,
       tokenAddress: tokenAddresses[index],

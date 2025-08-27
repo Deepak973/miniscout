@@ -2,49 +2,6 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "appId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "appToken",
-        "type": "address"
-      }
-    ],
-    "name": "addEscrow",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "appId",
-        "type": "uint256"
-      }
-    ],
-    "name": "deactivateApp",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "emergencyWithdraw",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "address",
         "name": "_protocolToken",
         "type": "address"
@@ -174,26 +131,6 @@
     "type": "event"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_tokenAddress",
-        "type": "address"
-      }
-    ],
-    "name": "emergencyWithdrawERC20",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "enableFees",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "anonymous": false,
     "inputs": [
       {
@@ -275,71 +212,6 @@
     "type": "event"
   },
   {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "name",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "description",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "ownerFid",
-        "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "homeUrl",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "miniappUrl",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "iconUrl",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "appId",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "tokenAmount",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "rewardPerReview",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "appToken",
-        "type": "address"
-      }
-    ],
-    "name": "registerApp",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "renounceOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "anonymous": false,
     "inputs": [
       {
@@ -367,115 +239,19 @@
       },
       {
         "internalType": "uint256",
-        "name": "rating",
+        "name": "amount",
         "type": "uint256"
       },
-      {
-        "internalType": "string",
-        "name": "comment",
-        "type": "string"
-      },
-      {
-        "internalType": "uint256",
-        "name": "fid",
-        "type": "uint256"
-      }
-    ],
-    "name": "submitFeedback",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
       {
         "internalType": "address",
-        "name": "newOwner",
+        "name": "appToken",
         "type": "address"
       }
     ],
-    "name": "transferOwnership",
+    "name": "addEscrow",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "feedbackId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "newRating",
-        "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "newComment",
-        "type": "string"
-      }
-    ],
-    "name": "updateFeedback",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_registrationFee",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_feedbackReward",
-        "type": "uint256"
-      }
-    ],
-    "name": "updateProtocolSettings",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_newProtocolToken",
-        "type": "address"
-      }
-    ],
-    "name": "updateProtocolToken",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "appId",
-        "type": "uint256"
-      }
-    ],
-    "name": "withdrawEscrow",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "withdrawProtocolTokens",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "stateMutability": "payable",
-    "type": "receive"
   },
   {
     "inputs": [
@@ -634,6 +410,46 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "appId",
+        "type": "uint256"
+      }
+    ],
+    "name": "deactivateApp",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "emergencyWithdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_tokenAddress",
+        "type": "address"
+      }
+    ],
+    "name": "emergencyWithdrawERC20",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "enableFees",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1140,6 +956,11 @@
         "internalType": "struct MiniScout.Feedback[]",
         "name": "",
         "type": "tuple[]"
+      },
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
       }
     ],
     "stateMutability": "view",
@@ -1175,6 +996,64 @@
     "inputs": [
       {
         "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "description",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "ownerFid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "homeUrl",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "miniappUrl",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "iconUrl",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "appId",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rewardPerReview",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "appToken",
+        "type": "address"
+      }
+    ],
+    "name": "registerApp",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
         "name": "",
         "type": "string"
       }
@@ -1201,6 +1080,108 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "appId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rating",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "comment",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fid",
+        "type": "uint256"
+      }
+    ],
+    "name": "submitFeedback",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "feedbackId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "newRating",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "newComment",
+        "type": "string"
+      }
+    ],
+    "name": "updateFeedback",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_registrationFee",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_feedbackReward",
+        "type": "uint256"
+      }
+    ],
+    "name": "updateProtocolSettings",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_newProtocolToken",
+        "type": "address"
+      }
+    ],
+    "name": "updateProtocolToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1269,5 +1250,29 @@
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "appId",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdrawEscrow",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdrawProtocolTokens",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
   }
 ]
