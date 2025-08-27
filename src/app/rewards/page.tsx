@@ -9,12 +9,6 @@ import { useConnect } from "wagmi";
 import toast from "react-hot-toast";
 import Header from "~/components/ui/Header";
 
-interface UserRewards {
-  totalRewards: bigint;
-  appTokenRewards: bigint;
-  protocolTokenRewards: bigint;
-}
-
 interface TokenRewardInfo {
   tokenAddress: `0x${string}`;
   balance: bigint;
@@ -30,7 +24,6 @@ interface TokenRewardInfo {
 export default function RewardsPage() {
   const { isConnected, address } = useContract();
   const { connect, connectors } = useConnect();
-  const [_rewards, _setRewards] = useState<UserRewards | null>(null);
   const [tokenRewards, setTokenRewards] = useState<TokenRewardInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,55 +33,41 @@ export default function RewardsPage() {
 
     setLoading(true);
     try {
-      // Get total rewards breakdown
-      // const totalRewardsDetailed =
-      //   await contractReads.getUserTotalRewardsDetailed(address);
-      // setRewards(totalRewardsDetailed);
+      // Get user feedbacks with token addresses
+      const userFeedbacks = await contractReads.getUserFeedbacks(address);
 
-      // Get individual token rewards
-      const userTokens = await contractReads.getUserTokens(address);
-      const tokenRewardsData: TokenRewardInfo[] = [];
+      // Group feedbacks by token address and calculate totals
+      const tokenMap = new Map<`0x${string}`, TokenRewardInfo>();
 
-      for (const tokenAddress of userTokens as `0x${string}`[]) {
-        const tokenReward = await contractReads.getUserTokenReward(
-          address,
-          tokenAddress
-        );
+      for (const userFeedback of userFeedbacks) {
+        const { feedback, tokenAddress } = userFeedback;
 
-        // Type guard to check if tokenReward has the expected structure
-        if (
-          tokenReward &&
-          typeof tokenReward === "object" &&
-          "totalEarned" in tokenReward &&
-          "balance" in tokenReward &&
-          "lastUpdated" in tokenReward &&
-          typeof tokenReward.totalEarned === "bigint" &&
-          typeof tokenReward.balance === "bigint" &&
-          typeof tokenReward.lastUpdated === "bigint" &&
-          tokenReward.totalEarned > 0n
-        ) {
-          // Get app information for this token
-          const appInfo = await contractReads.getAppByTokenAddress(
-            tokenAddress
-          );
+        if (!tokenMap.has(tokenAddress)) {
+          // Get app info for this token
+          const appInfo = await contractReads.getApp(feedback.appId);
 
-          tokenRewardsData.push({
+          tokenMap.set(tokenAddress, {
             tokenAddress,
-            balance: tokenReward.balance,
-            totalEarned: tokenReward.totalEarned,
-            lastUpdated: tokenReward.lastUpdated,
-            appInfo: appInfo
-              ? {
-                  name: appInfo.name,
-                  iconUrl: appInfo.iconUrl,
-                  description: appInfo.description,
-                }
-              : null,
+            balance: 0n,
+            totalEarned: 0n,
+            lastUpdated: feedback.createdAt,
+            appInfo: {
+              name: appInfo.name,
+              iconUrl: appInfo.iconUrl,
+              description: appInfo.description,
+            },
           });
+        }
+
+        const tokenInfo = tokenMap.get(tokenAddress)!;
+        tokenInfo.totalEarned += feedback.rewardAmount;
+        tokenInfo.balance += feedback.rewardAmount; // Assuming all rewards are available
+        if (feedback.createdAt > tokenInfo.lastUpdated) {
+          tokenInfo.lastUpdated = feedback.createdAt;
         }
       }
 
-      setTokenRewards(tokenRewardsData);
+      setTokenRewards(Array.from(tokenMap.values()));
     } catch (error) {
       console.error("Error fetching rewards:", error);
       toast.error("Failed to load rewards");
@@ -166,8 +145,6 @@ export default function RewardsPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Total Rewards Summary */}
-
             {/* Individual Token Rewards */}
             {tokenRewards.length > 0 && (
               <div className="bg-[#ED775A]/10 rounded-lg shadow p-6 border border-[#FAD691]/30">

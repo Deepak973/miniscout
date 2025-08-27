@@ -1,12 +1,21 @@
-import { createPublicClient, http, parseEther, formatEther } from "viem";
+import { createPublicClient, http } from "viem";
 import { baseSepolia } from "viem/chains";
+import MINISCOUT_ABI from "../utils/MiniScoutABI.json";
 
-import MiniScoutABI from "~/utils/MiniScoutABI.json";
+export const CONTRACT_ADDRESSES = {
+  MINISCOUT: "0xeA9C220474bA6a4Bb0BE9b013061055B45b68e0b" as `0x${string}`, // Update with your deployed address
+  PROTOCOL_TOKEN: "0xfa112a5eB23e0Cc31E11d7a98CC098266d7A2244" as `0x${string}`, // Update with your protocol token address
+};
 
-// Types for contract data
+export const publicClient = createPublicClient({
+  chain: baseSepolia,
+  transport: http(),
+});
+
 export interface App {
   appId: bigint;
   owner: `0x${string}`;
+  ownerFid: bigint;
   name: string;
   description: string;
   appToken: `0x${string}`;
@@ -23,6 +32,7 @@ export interface App {
 export interface Feedback {
   feedbackId: bigint;
   appId: bigint;
+  fid: bigint;
   reviewer: `0x${string}`;
   rating: bigint;
   comment: string;
@@ -31,55 +41,50 @@ export interface Feedback {
   createdAt: bigint;
 }
 
-export interface UserTokenReward {
+export interface UserFeedbackWithToken {
+  feedback: Feedback;
   tokenAddress: `0x${string}`;
-  balance: bigint;
-  totalEarned: bigint;
-  lastUpdated: bigint;
 }
 
-// Contract addresses (replace with your deployed addresses)
-export const CONTRACT_ADDRESSES = {
-  MINISCOUT: "0xcCEAd9170B4A9ef324aB9304Dc6cC37101a5361E",
-  MINISCOUT_TOKEN: "0xa2CC944515134b7d257f503E8D3d3D283d45AcDb",
+const contractConfig = {
+  address: CONTRACT_ADDRESSES.MINISCOUT,
+  abi: MINISCOUT_ABI,
 } as const;
 
-// Public client for read operations
-export const publicClient = createPublicClient({
-  chain: baseSepolia,
-  transport: http(),
-});
-
-// Contract configuration
-export const contractConfig = {
-  address: CONTRACT_ADDRESSES.MINISCOUT as `0x${string}`,
-  abi: MiniScoutABI,
-} as const;
-
-// Utility functions
-export const formatTokenAmount = (
-  amount: bigint,
-  _decimals: number = 18
-): string => {
-  return formatEther(amount);
-};
-
-export const parseTokenAmount = (amount: string): bigint => {
-  return parseEther(amount);
-};
-
-// Contract read functions
 export const contractReads = {
-  // Get total number of apps
-  getTotalApps: async () => {
-    return await publicClient.readContract({
-      ...contractConfig,
-      functionName: "getTotalApps",
-    });
+  // Get registration fee info
+  getRegistrationFeeInfo: async () => {
+    const [fee, isApplicable, totalApps] = await Promise.all([
+      publicClient.readContract({
+        ...contractConfig,
+        functionName: "appRegistrationFee",
+      }),
+      publicClient.readContract({
+        ...contractConfig,
+        functionName: "registrationFeeApplicable",
+      }),
+      publicClient.readContract({
+        ...contractConfig,
+        functionName: "getTotalApps",
+      }),
+    ]);
+    return { fee, isApplicable, totalApps };
   },
 
-  // Get app by ID
-  getApp: async (appId: bigint) => {
+  // Get all apps
+  getAllApps: async (): Promise<(App & { averageRating: number })[]> => {
+    const apps = (await publicClient.readContract({
+      ...contractConfig,
+      functionName: "getApps",
+    })) as App[];
+    return apps.map((app: App) => ({
+      ...app,
+      averageRating: app.totalRatings > 0n ? 4.5 : 0, // Default rating for now
+    }));
+  },
+
+  // Get single app
+  getApp: async (appId: bigint): Promise<App> => {
     return (await publicClient.readContract({
       ...contractConfig,
       functionName: "getApp",
@@ -87,209 +92,121 @@ export const contractReads = {
     })) as App;
   },
 
-  // Get all apps (we'll need to iterate through them)
-  getAllApps: async () => {
-    const totalApps = await contractReads.getTotalApps();
-    const apps: (App & { averageRating: number })[] = [];
-
-    for (let i = 1; i <= Number(totalApps); i++) {
-      try {
-        const app = (await contractReads.getApp(BigInt(i))) as App;
-        if (app.isActive) {
-          apps.push({
-            ...app,
-            appId: BigInt(i),
-            averageRating: app.totalRatings > 0n ? 4.5 : 0, // Default rating for now
-          });
-        }
-      } catch (error) {
-        console.error(`Error fetching app ${i}:`, error);
-      }
-    }
-
-    return apps;
-  },
-
-  // Get app feedback
-  getAppFeedbacks: async (appId: bigint) => {
-    const feedbackIds = (await publicClient.readContract({
+  // Get app feedbacks
+  getAppFeedbacks: async (appId: bigint): Promise<Feedback[]> => {
+    return (await publicClient.readContract({
       ...contractConfig,
       functionName: "getAppFeedbacks",
       args: [appId],
-    })) as bigint[];
+    })) as Feedback[];
+  },
 
-    const feedbacks: Feedback[] = [];
-    for (const feedbackId of feedbackIds) {
-      try {
-        const feedback = (await publicClient.readContract({
-          ...contractConfig,
-          functionName: "getFeedback",
-          args: [feedbackId],
-        })) as Feedback;
-        feedbacks.push(feedback);
-      } catch (error) {
-        console.error(`Error fetching feedback ${feedbackId}:`, error);
-      }
-    }
+  // Get user feedbacks with token addresses
+  getUserFeedbacks: async (
+    userAddress: `0x${string}`
+  ): Promise<UserFeedbackWithToken[]> => {
+    const [feedbacks, tokenAddresses] = (await publicClient.readContract({
+      ...contractConfig,
+      functionName: "getUserFeedbacks",
+      args: [userAddress],
+    })) as [Feedback[], `0x${string}`[]];
+    return feedbacks.map((feedback: Feedback, index: number) => ({
+      feedback,
+      tokenAddress: tokenAddresses[index],
+    }));
+  },
 
-    return feedbacks;
+  // Get single feedback
+  getFeedback: async (feedbackId: bigint): Promise<Feedback> => {
+    return (await publicClient.readContract({
+      ...contractConfig,
+      functionName: "getFeedback",
+      args: [feedbackId],
+    })) as Feedback;
   },
 
   // Check if user has given feedback for an app
-  hasUserGivenFeedback: async (appId: bigint, userAddress: `0x${string}`) => {
-    return await publicClient.readContract({
+  hasUserGivenFeedback: async (
+    appId: bigint,
+    userAddress: `0x${string}`
+  ): Promise<boolean> => {
+    return (await publicClient.readContract({
       ...contractConfig,
       functionName: "userFeedbackGiven",
       args: [appId, userAddress],
-    });
+    })) as boolean;
   },
 
-  // Get registration fee
-  getRegistrationFee: async () => {
-    return await publicClient.readContract({
+  // Get app escrow amount
+  getAppEscrow: async (appId: bigint): Promise<bigint> => {
+    return (await publicClient.readContract({
       ...contractConfig,
-      functionName: "appRegistrationFee",
-    });
+      functionName: "appEscrow",
+      args: [appId],
+    })) as bigint;
+  },
+
+  // Get app owner
+  getAppOwner: async (appId: bigint): Promise<`0x${string}`> => {
+    return (await publicClient.readContract({
+      ...contractConfig,
+      functionName: "appOwners",
+      args: [appId],
+    })) as `0x${string}`;
   },
 
   // Get feedback reward
-  getFeedbackReward: async () => {
-    return await publicClient.readContract({
-      ...contractConfig,
-      functionName: "feedbackReward",
-    });
-  },
-
-  // Get user rewards
-  getUserRewards: async (userAddress: `0x${string}`) => {
+  getFeedbackReward: async (): Promise<bigint> => {
     return (await publicClient.readContract({
       ...contractConfig,
-      functionName: "getUserRewards",
-      args: [userAddress],
+      functionName: "getFeedbackReward",
     })) as bigint;
   },
 
-  // Get user's token reward information
-  getUserTokenReward: async (
-    userAddress: `0x${string}`,
-    tokenAddress: `0x${string}`
-  ) => {
-    return await publicClient.readContract({
-      ...contractConfig,
-      functionName: "getUserTokenReward",
-      args: [userAddress, tokenAddress],
-    });
-  },
-
-  // Get all tokens a user has earned
-  getUserTokens: async (userAddress: `0x${string}`) => {
-    return await publicClient.readContract({
-      ...contractConfig,
-      functionName: "getUserTokens",
-      args: [userAddress],
-    });
-  },
-
-  // Get user's total rewards across all tokens
-  getUserTotalRewards: async (userAddress: `0x${string}`) => {
+  // Get total counts
+  getTotalApps: async (): Promise<bigint> => {
     return (await publicClient.readContract({
       ...contractConfig,
-      functionName: "getUserTotalRewards",
-      args: [userAddress],
+      functionName: "getTotalApps",
     })) as bigint;
   },
 
-  // Get app by token address
-  getAppByTokenAddress: async (tokenAddress: `0x${string}`) => {
-    const totalApps = await contractReads.getTotalApps();
-
-    for (let i = 1; i <= Number(totalApps); i++) {
-      try {
-        const app = (await contractReads.getApp(BigInt(i))) as App;
-        if (app.appToken.toLowerCase() === tokenAddress.toLowerCase()) {
-          return app;
-        }
-      } catch (error) {
-        console.error(`Error fetching app ${i}:`, error);
-      }
-    }
-
-    return null;
-  },
-
-  // Get all token rewards for a user (including protocol tokens)
-  getUserTotalRewardsDetailed: async (userAddress: `0x${string}`) => {
-    try {
-      // Get user's app token rewards
-      const appTokenRewards = await contractReads.getUserRewards(userAddress);
-
-      // Get protocol token balance
-      const protocolTokenBalance = await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.MINISCOUT_TOKEN,
-        abi: [
-          {
-            inputs: [{ name: "account", type: "address" }],
-            name: "balanceOf",
-            outputs: [{ name: "", type: "uint256" }],
-            stateMutability: "view",
-            type: "function",
-          },
-        ],
-        functionName: "balanceOf",
-        args: [userAddress],
-      });
-
-      return {
-        appTokenRewards,
-        protocolTokenRewards: protocolTokenBalance,
-        totalRewards: appTokenRewards + protocolTokenBalance,
-      };
-    } catch (error) {
-      console.error("Error fetching user rewards:", error);
-      return {
-        appTokenRewards: 0n,
-        protocolTokenRewards: 0n,
-        totalRewards: 0n,
-      };
-    }
+  getTotalFeedback: async (): Promise<bigint> => {
+    return (await publicClient.readContract({
+      ...contractConfig,
+      functionName: "getTotalFeedback",
+    })) as bigint;
   },
 };
 
-// Contract write functions (these will be used with wagmi hooks)
 export const contractWrites = {
-  // Register app
   registerApp: {
-    ...contractConfig,
+    address: CONTRACT_ADDRESSES.MINISCOUT,
+    abi: MINISCOUT_ABI,
     functionName: "registerApp",
   },
 
-  // Submit feedback
   submitFeedback: {
-    ...contractConfig,
+    address: CONTRACT_ADDRESSES.MINISCOUT,
+    abi: MINISCOUT_ABI,
     functionName: "submitFeedback",
   },
 
-  // Add escrow
   addEscrow: {
-    ...contractConfig,
+    address: CONTRACT_ADDRESSES.MINISCOUT,
+    abi: MINISCOUT_ABI,
     functionName: "addEscrow",
   },
 
-  // Withdraw escrow
   withdrawEscrow: {
-    ...contractConfig,
+    address: CONTRACT_ADDRESSES.MINISCOUT,
+    abi: MINISCOUT_ABI,
     functionName: "withdrawEscrow",
   },
 
-  // Deactivate app
   deactivateApp: {
-    ...contractConfig,
+    address: CONTRACT_ADDRESSES.MINISCOUT,
+    abi: MINISCOUT_ABI,
     functionName: "deactivateApp",
-  },
-
-  // Claim protocol rewards
-  claimProtocolRewards: {
-    ...contractConfig,
-    functionName: "claimProtocolRewards",
   },
 };

@@ -153,197 +153,194 @@ export default function HomePage() {
         </div>
 
         {/* Apps Grid */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
-              Mini Apps
-            </h2>
-            <span className="text-sm text-[#C9CDCF] arimo-400">
-              {filteredApps.length} apps
-            </span>
-          </div>
-
-          {filteredApps.length === 0 ? (
-            <div className="bg-[#ED775A]/10 rounded-lg shadow p-12 text-center border border-[#FAD691]/20">
-              <MessageSquare className="w-12 h-12 text-[#FAD691] mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
-                No apps found
-              </h3>
-              <p className="text-[#C9CDCF] mb-6 arimo-400">
-                {searchTerm
-                  ? `No apps matching "${searchTerm}"`
-                  : "No apps have been registered yet"}
-              </p>
-              {!searchTerm && (
-                <Button
-                  onClick={handleAddNewApp}
-                  className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white arimo-600"
-                >
-                  Add First App
-                </Button>
-              )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
+                Mini Apps
+              </h2>
+              <span className="text-sm text-[#C9CDCF] arimo-400">
+                {filteredApps.length} apps
+              </span>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredApps.map((app) => (
+
+            {filteredApps.length === 0 ? (
+              <div className="bg-[#ED775A]/10 rounded-lg shadow p-12 text-center border border-[#FAD691]/20">
+                <MessageSquare className="w-12 h-12 text-[#FAD691] mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
+                  No apps found
+                </h3>
+                <p className="text-[#C9CDCF] mb-6 arimo-400">
+                  {searchTerm
+                    ? `No apps matching "${searchTerm}"`
+                    : "No apps have been registered yet"}
+                </p>
+                {!searchTerm && (
+                  <Button
+                    onClick={handleAddNewApp}
+                    className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white arimo-600"
+                  >
+                    Add First App
+                  </Button>
+                )}
+              </div>
+            ) : (
+              filteredApps.map((app) => (
                 <div
                   key={app.appId.toString()}
-                  className="bg-[#ED775A]/10 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-500 border border-[#FAD691]/30 hover:border-[#FAD691]/60 group overflow-hidden cursor-pointer"
+                  className="group relative bg-gradient-to-br from-[#1C1B1B]/80 to-[#2A2A2A]/60 backdrop-blur-xl rounded-2xl border border-[#FAD691]/20 hover:border-[#FAD691]/50 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden"
                   onClick={() => handleAppClick(app)}
                 >
-                  {/* App Header with Image */}
-                  <div className="relative h-40 bg-gradient-to-br from-[#ED775A]/20 to-[#FAD691]/20 p-4 flex flex-col justify-between">
-                    <div className="absolute top-4 right-4">
-                      <div className="w-3 h-3 bg-[#FAD691] rounded-full animate-pulse"></div>
-                    </div>
+                  {/* Header / Cover */}
+                  <div className="relative h-28 w-full">
+                    {/* Stretched Cover Image */}
+                    <img
+                      src={app.iconUrl}
+                      alt={app.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => (e.currentTarget.src = "/icon.png")}
+                    />
 
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 rounded-lg overflow-hidden shadow-lg border-2 border-[#FAD691]/30">
-                        <img
-                          src={app.iconUrl}
-                          alt={app.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = "/icon.png";
-                          }}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-base font-semibold text-[#FAD691] truncate edu-nsw-act-cursive-600">
-                          {app.name}
-                        </h3>
-                        <p className="text-[#C9CDCF] text-xs mt-1 line-clamp-2 arimo-400">
-                          {app.description}
-                        </p>
-                      </div>
+                    {/* Overlay for readability */}
+                    <div className="absolute inset-0 bg-black/30" />
+
+                    {/* Floating App Icon */}
+                    <div className="absolute -bottom-6 left-4 w-14 h-14 rounded-xl overflow-hidden border-2 border-[#FAD691]/40 shadow-lg bg-black/40">
+                      <img
+                        src={app.iconUrl}
+                        alt={app.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => (e.currentTarget.src = "/icon.png")}
+                      />
                     </div>
                   </div>
 
-                  {/* App Content */}
-                  <div className="p-4 space-y-4">
-                    {/* Rating + Reviews */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Star className="w-4 h-4 text-[#FAD691] fill-current" />
-                        <span className="text-sm text-[#FAD691] arimo-600">
+                  {/* Body */}
+                  <div className="pt-8 px-4 pb-4 space-y-3">
+                    <div>
+                      <h3 className="text-base font-semibold text-[#FAD691] truncate edu-nsw-act-cursive-600">
+                        {app.name}
+                      </h3>
+                      <p className="text-xs text-[#C9CDCF] line-clamp-2 arimo-400">
+                        {app.description}
+                      </p>
+                    </div>
+
+                    {/* Rating + Avg */}
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center space-x-1">
+                        <Star className="w-3 h-3 text-[#FAD691] fill-current" />
+                        <span className="text-[#FAD691] font-medium">
                           {app.averageRating.toFixed(1)}
                         </span>
                       </div>
-                      <span className="text-sm text-[#C9CDCF] arimo-400">
-                        {app.totalRatings.toString()} reviews
+                      <span className="text-[#C9CDCF]">
+                        {app.totalRatings} reviews
                       </span>
                     </div>
 
-                    {/* Reward Information */}
-                    <div className="p-3 bg-gradient-to-r from-[#ED775A]/10 to-[#FAD691]/10 rounded-lg border border-[#FAD691]/20">
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="text-[#FAD691] font-medium arimo-600">
-                          Rewards:
-                        </span>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-[#C9CDCF] arimo-400">
-                            {formatEther(app.rewardPerReview)} per review
-                          </span>
-                          <Gift className="w-3 h-3 text-[#ED775A]" />
+                    {/* Rewards */}
+                    <div className="mt-4 bg-[#ED775A]/10 rounded-xl border border-[#FAD691]/30 px-4 py-3 shadow-sm">
+                      <h3 className="text-sm font-semibold text-[#FAD691] mb-2 flex items-center gap-2">
+                        <Gift className="w-4 h-4 text-[#ED775A]" />
+                        Rewards
+                      </h3>
+                      <div className="grid grid-cols-2 gap-y-2 text-sm">
+                        <div className="text-[#C9CDCF]">Per Review</div>
+                        <div className="text-right text-[#FAD691] font-medium">
+                          {formatEther(app.rewardPerReview)} tokens
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-[#FAD691] arimo-500">
-                          Available:
-                        </span>
-                        <span className="text-[#C9CDCF] arimo-400">
+                        <div className="text-[#C9CDCF]">Available Pool</div>
+                        <div className="text-right text-[#FAD691] font-medium">
                           {formatEther(app.escrowAmount)} tokens
-                        </span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex flex-col space-y-2">
+                    {/* Actions */}
+                    <div className="flex gap-2">
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
                           window.location.href = `/feedback/${app.appId}`;
                         }}
-                        className="w-full bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 arimo-600 py-2 rounded-lg border border-[#FAD691]/30 transition-all duration-300 hover:scale-105"
+                        className="flex-1 bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 border border-[#FAD691]/30 text-xs rounded-lg transition hover:scale-105"
                       >
                         Review
                       </Button>
-                      <div className="flex space-x-2">
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            copyFeedbackUrl(app.appId.toString());
-                          }}
-                          className="flex-1 bg-[#ED775A]/20 text-[#FAD691] hover:bg-[#ED775A]/30 arimo-500 py-2 rounded-lg border border-[#ED775A]/30 transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-1"
-                          title="Copy feedback URL"
-                        >
-                          <Copy className="w-3 h-3" />
-                          <span className="text-xs">Copy</span>
-                        </Button>
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(app.miniappUrl, "_blank");
-                          }}
-                          className="flex-1 bg-[#ED775A] text-white hover:bg-[#FAD691] hover:text-[#0F0E0E] arimo-600 py-2 rounded-lg transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-1"
-                          title="Open MiniApp"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          <span className="text-xs">Open</span>
-                        </Button>
-                      </div>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyFeedbackUrl(app.appId.toString());
+                        }}
+                        className="flex items-center justify-center gap-1 flex-1 bg-[#ED775A]/20 text-[#FAD691] hover:bg-[#ED775A]/30 border border-[#ED775A]/30 text-xs rounded-lg transition hover:scale-105"
+                      >
+                        <Copy className="w-3 h-3" /> Copy
+                      </Button>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(app.miniappUrl, "_blank");
+                        }}
+                        className="flex items-center justify-center gap-1 flex-1 bg-[#ED775A] text-white hover:bg-[#FAD691] hover:text-[#0F0E0E] text-xs rounded-lg transition hover:scale-105"
+                      >
+                        <ExternalLink className="w-3 h-3" /> Open
+                      </Button>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Sidebar */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50">
-          <div
-            className="absolute inset-0 bg-black bg-opacity-50"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <div className="absolute left-0 top-0 h-full w-80 bg-[#ED775A]/10 shadow-xl border-r border-[#FAD691]/30">
-            <div className="flex items-center justify-between p-4 border-b border-[#FAD691]/30">
-              <h2 className="text-lg font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
-                Menu
-              </h2>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="p-2 text-[#C9CDCF] hover:text-[#FAD691]"
-              >
-                X
-              </button>
-            </div>
-
-            <div className="p-4 space-y-4">
-              <Button
-                onClick={handleAddNewApp}
-                className="w-full bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white arimo-600"
-              >
-                Add New App
-              </Button>
-              <Button
-                onClick={handleMyApps}
-                className="w-full bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 arimo-600"
-              >
-                My Apps
-              </Button>
-              <Button
-                onClick={handleRewards}
-                className="w-full bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 arimo-600"
-              >
-                My Rewards
-              </Button>
-            </div>
+              ))
+            )}
           </div>
         </div>
-      )}
+
+        {/* Sidebar */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-100">
+            {/* Background overlay */}
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setSidebarOpen(false)}
+            />
+
+            {/* Sidebar */}
+            <div className="absolute left-0 top-0 h-full w-80 bg-black/60 backdrop-blur-lg shadow-xl border-r border-[#FAD691]/20">
+              <div className="flex items-center justify-between p-4 border-b border-[#FAD691]/20">
+                <h2 className="text-lg font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
+                  Menu
+                </h2>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="p-2 text-[#C9CDCF] hover:text-[#FAD691]"
+                >
+                  X
+                </button>
+              </div>
+
+              <div className="p-4 space-y-4">
+                <Button
+                  onClick={handleAddNewApp}
+                  className="w-full bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white arimo-600"
+                >
+                  Add New App
+                </Button>
+                <Button
+                  onClick={handleMyApps}
+                  className="w-full bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 arimo-600"
+                >
+                  My Apps
+                </Button>
+                <Button
+                  onClick={handleRewards}
+                  className="w-full bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 arimo-600"
+                >
+                  My Rewards
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

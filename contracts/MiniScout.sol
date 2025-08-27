@@ -14,10 +14,12 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
     uint256 private _appIds;
     uint256 public appRegistrationFee = 0.0001 ether;
     uint256 public feedbackReward = 25 * 10 ** 18; // fixed protocol token reward
+    bool public registrationFeeApplicable = false;
 
     struct App {
         uint256 appId;
         address owner;
+        uint256 ownerFid;
         string name;
         string description;
         address appToken;
@@ -34,19 +36,13 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
     struct Feedback {
         uint256 feedbackId;
         uint256 appId;
+        uint256 fid;
         address reviewer;
         uint256 rating;
         string comment;
         uint256 rewardAmount;
         uint256 protocolReward;
         uint256 createdAt;
-    }
-
-    struct UserTokenReward {
-        address tokenAddress;
-        uint256 balance;
-        uint256 totalEarned;
-        uint256 lastUpdated;
     }
 
     mapping(uint256 => App) public apps;
@@ -57,10 +53,7 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
     mapping(address => uint256) public userRewards;
     mapping(uint256 => address) public appOwners;
     mapping(string => bool) public registeredAppIds;
-
-    // New mappings for detailed token tracking
-    mapping(address => mapping(address => UserTokenReward)) public userTokenRewards; // user => token => reward info
-    mapping(address => address[]) public userTokens; // user => array of token addresses they've earned
+    mapping(address => uint256[]) public userFeedbackIds;
 
     uint256 private _feedbackIds;
 
@@ -70,6 +63,7 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
         string name,
         string homeUrl,
         string miniappUrl,
+        string iconUrl,
         uint256 escrowAmount,
         uint256 rewardPerReview
     );
@@ -98,6 +92,7 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
     function registerApp(
         string memory name,
         string memory description,
+        uint256 ownerFid,
         string memory homeUrl,
         string memory miniappUrl,
         string memory iconUrl,
@@ -106,7 +101,9 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
         uint256 rewardPerReview,
         address appToken
     ) external payable nonReentrant {
-        require(msg.value >= appRegistrationFee, "Insufficient registration fee");
+        if (registrationFeeApplicable) {
+            require(msg.value >= appRegistrationFee, "Insufficient registration fee");
+        }
         require(bytes(name).length > 0, "Name cannot be empty");
         require(bytes(miniappUrl).length > 0, "Miniapp URL cannot be empty");
         require(bytes(appId).length > 0, "App ID cannot be empty");
@@ -124,6 +121,7 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
         apps[internalAppId] = App({
             appId: internalAppId,
             owner: msg.sender,
+            ownerFid: ownerFid,
             name: name,
             description: description,
             appToken: appToken,
@@ -141,13 +139,13 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
         appEscrow[internalAppId] = tokenAmount;
         registeredAppIds[appId] = true;
 
-        emit AppRegistered(internalAppId, msg.sender, name, homeUrl, miniappUrl, tokenAmount, rewardPerReview);
+        emit AppRegistered(internalAppId, msg.sender, name, homeUrl, miniappUrl, iconUrl, tokenAmount, rewardPerReview);
     }
 
     /**
      * @dev Submit feedback
      */
-    function submitFeedback(uint256 appId, uint256 rating, string memory comment) external nonReentrant {
+    function submitFeedback(uint256 appId, uint256 rating, string memory comment, uint256 fid) external nonReentrant {
         App storage app = apps[appId];
         require(app.isActive, "App not active");
         require(rating >= 1 && rating <= 5, "Rating must be 1-5");
@@ -165,12 +163,15 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
             feedbackId: feedbackId,
             appId: appId,
             reviewer: msg.sender,
+            fid: fid,
             rating: rating,
             comment: comment,
             rewardAmount: appTokenReward,
             protocolReward: protocolTokenReward,
             createdAt: block.timestamp
         });
+
+        userFeedbackIds[msg.sender].push(feedbackId);
 
         app.totalRatings++;
         app.totalFeedbackRewards += appTokenReward;
@@ -181,28 +182,6 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
         appFeedbacks[appId].push(feedbackId);
         userFeedbackGiven[appId][msg.sender] = true;
         userRewards[msg.sender] += appTokenReward;
-
-        // Track app token rewards
-        UserTokenReward storage appTokenRewardInfo = userTokenRewards[msg.sender][app.appToken];
-        if (appTokenRewardInfo.tokenAddress == address(0)) {
-            // First time earning this token
-            appTokenRewardInfo.tokenAddress = app.appToken;
-            userTokens[msg.sender].push(app.appToken);
-        }
-        appTokenRewardInfo.balance += appTokenReward;
-        appTokenRewardInfo.totalEarned += appTokenReward;
-        appTokenRewardInfo.lastUpdated = block.timestamp;
-
-        // Track protocol token rewards
-        UserTokenReward storage protocolTokenRewardInfo = userTokenRewards[msg.sender][address(protocolToken)];
-        if (protocolTokenRewardInfo.tokenAddress == address(0)) {
-            // First time earning protocol tokens
-            protocolTokenRewardInfo.tokenAddress = address(protocolToken);
-            userTokens[msg.sender].push(address(protocolToken));
-        }
-        protocolTokenRewardInfo.balance += protocolTokenReward;
-        protocolTokenRewardInfo.totalEarned += protocolTokenReward;
-        protocolTokenRewardInfo.lastUpdated = block.timestamp;
 
         IERC20(app.appToken).transfer(msg.sender, appTokenReward);
 
@@ -279,18 +258,6 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
     }
 
     /**
-     * @dev Claim accumulated protocol token rewards
-     */
-    function claimProtocolRewards() external nonReentrant {
-        uint256 balance = protocolToken.balanceOf(msg.sender);
-        require(balance > 0, "No protocol tokens to claim");
-
-        // This would typically involve transferring tokens from a reward pool
-        // For now, we'll just emit an event
-        emit RewardsClaimed(msg.sender, balance);
-    }
-
-    /**
      * @dev Update protocol settings (only owner)
      */
     function updateProtocolSettings(uint256 _registrationFee, uint256 _feedbackReward) external onlyOwner {
@@ -310,11 +277,15 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
 
     /**
      * @dev Get app information
-     * @param appId App ID
-     * @return App information
+     * @return Apps information
      */
-    function getApp(uint256 appId) external view returns (App memory) {
-        return apps[appId];
+    function getApps() external view returns (App[] memory) {
+        App[] memory result = new App[](_appIds);
+
+        for (uint256 i = 0; i <= (_appIds - 1); i++) {
+            result[0] = apps[i + 1];
+        }
+        return result;
     }
 
     /**
@@ -327,12 +298,34 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
     }
 
     /**
-     * @dev Get all feedback for an app
-     * @param appId App ID
-     * @return Array of feedback IDs
+     * @dev Get all feedback structs for a user
+     * @param user User address
+     * @return Array of Feedback structs
      */
-    function getAppFeedbacks(uint256 appId) external view returns (uint256[] memory) {
-        return appFeedbacks[appId];
+    function getUserFeedbacks(address user) external view returns (Feedback[] memory) {
+        uint256[] storage feedbackIds = userFeedbackIds[user];
+        Feedback[] memory result = new Feedback[](feedbackIds.length);
+
+        for (uint256 i = 0; i < feedbackIds.length; i++) {
+            result[i] = feedbacks[feedbackIds[i]];
+        }
+        return result;
+    }
+    /**
+     * @dev Get all feedback structs for an app
+     * @param appId App ID
+     * @return Array of Feedback structs
+     */
+
+    function getAppFeedbacks(uint256 appId) external view returns (Feedback[] memory) {
+        uint256[] storage feedbackIds = appFeedbacks[appId];
+        Feedback[] memory result = new Feedback[](feedbackIds.length);
+
+        for (uint256 i = 0; i < feedbackIds.length; i++) {
+            result[i] = feedbacks[feedbackIds[i]];
+        }
+
+        return result;
     }
 
     /**
@@ -352,51 +345,6 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
     }
 
     /**
-     * @dev Get user's total rewards
-     * @param user User address
-     * @return Total rewards earned
-     */
-    function getUserRewards(address user) external view returns (uint256) {
-        return userRewards[user];
-    }
-
-    /**
-     * @dev Get user's token reward information
-     * @param user User address
-     * @param tokenAddress Token address
-     * @return Token reward information
-     */
-    function getUserTokenReward(address user, address tokenAddress) external view returns (UserTokenReward memory) {
-        return userTokenRewards[user][tokenAddress];
-    }
-
-    /**
-     * @dev Get all tokens a user has earned
-     * @param user User address
-     * @return Array of token addresses
-     */
-    function getUserTokens(address user) external view returns (address[] memory) {
-        return userTokens[user];
-    }
-
-    /**
-     * @dev Get user's total rewards across all tokens
-     * @param user User address
-     * @return Total rewards in wei
-     */
-    function getUserTotalRewards(address user) external view returns (uint256) {
-        uint256 total = 0;
-        address[] memory tokens = userTokens[user];
-
-        for (uint256 i = 0; i < tokens.length; i++) {
-            UserTokenReward memory reward = userTokenRewards[user][tokens[i]];
-            total += reward.totalEarned;
-        }
-
-        return total;
-    }
-
-    /**
      * @dev Emergency withdraw ETH (only owner)
      */
     function emergencyWithdraw() external onlyOwner {
@@ -404,12 +352,34 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
     }
 
     /**
+     * @dev Emergency withdraw ERC20 (only owner)
+     */
+    function emergencyWithdrawERC20(address _tokenAddress) external onlyOwner {
+        IERC20(_tokenAddress).transfer(msg.sender, IERC20(_tokenAddress).balanceOf(address(this)));
+    }
+
+    /**
      * @dev Withdraw protocol tokens (only owner)
      */
-    function withdrawProtocolTokens() external onlyOwner {
+    function withdrawProtocolTokens() public onlyOwner {
         uint256 balance = protocolToken.balanceOf(address(this));
         require(balance > 0, "No protocol tokens to withdraw");
         protocolToken.transfer(owner(), balance);
+    }
+
+    /**
+     * @dev update protocol token
+     */
+    function updateProtocolToken(address _newProtocolToken) external onlyOwner {
+        withdrawProtocolTokens();
+        protocolToken = IERC20(_newProtocolToken);
+    }
+
+    /**
+     * @dev enable/disable registrationFee
+     */
+    function enableFees() external onlyOwner {
+        registrationFeeApplicable = !registrationFeeApplicable;
     }
 
     /**

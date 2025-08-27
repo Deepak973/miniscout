@@ -123,14 +123,22 @@ export default function MyAppsPage() {
                 key={app.appId.toString()}
                 className="bg-[#ED775A]/10 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-500 border border-[#FAD691]/30 hover:border-[#FAD691]/60 group overflow-hidden"
               >
-                {/* App Header with Image */}
-                <div className="relative h-48 bg-gradient-to-br from-[#ED775A]/20 to-[#FAD691]/20 p-6 flex flex-col justify-between">
-                  <div className="absolute top-4 right-4">
-                    <div className="w-3 h-3 bg-[#FAD691] rounded-full animate-pulse"></div>
-                  </div>
+                {/* Cover Header with Stretched Image */}
+                <div className="relative h-32">
+                  <img
+                    src={app.iconUrl} // 👈 or app.coverImage if you have a dedicated cover field
+                    alt={`${app.name} cover`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = "/cover-fallback.png"; // 👈 add fallback cover
+                    }}
+                  />
+                  {/* Dark overlay for readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0F0E0E]/70 to-transparent" />
 
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 rounded-xl overflow-hidden shadow-lg border-2 border-[#FAD691]/30">
+                  {/* Floating Profile Icon */}
+                  <div className="absolute left-1/2 -bottom-10 -translate-x-1/2">
+                    <div className="w-20 h-20 rounded-xl overflow-hidden shadow-lg border-2 border-[#FAD691]/50 bg-[#0F0E0E]">
                       <img
                         src={app.iconUrl}
                         alt={app.name}
@@ -140,19 +148,18 @@ export default function MyAppsPage() {
                         }}
                       />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-[#FAD691] truncate edu-nsw-act-cursive-600">
-                        {app.name}
-                      </h3>
-                      <p className="text-[#C9CDCF] text-xs mt-1 line-clamp-2 arimo-400">
-                        {app.description}
-                      </p>
-                    </div>
                   </div>
                 </div>
 
-                {/* App Content */}
-                <div className="p-6 space-y-6">
+                {/* App Info */}
+                <div className="pt-14 px-6 pb-6 space-y-6 text-center">
+                  <h3 className="text-lg font-semibold text-[#FAD691] truncate edu-nsw-act-cursive-600">
+                    {app.name}
+                  </h3>
+                  <p className="text-[#C9CDCF] text-sm line-clamp-2 arimo-400">
+                    {app.description}
+                  </p>
+
                   {/* Stats Cards */}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="text-center p-3 bg-[#FAD691]/10 rounded-lg border border-[#FAD691]/20 hover:bg-[#FAD691]/20 transition-colors">

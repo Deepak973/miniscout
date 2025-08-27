@@ -16,9 +16,14 @@ import { Label } from "~/components/ui/label";
 import { useMiniApp } from "@neynar/react";
 import toast from "react-hot-toast";
 import { useContract } from "~/hooks/useContract";
-import { formatEther, parseEther } from "viem";
+import { formatEther } from "viem";
 import { useConnect, useDisconnect } from "wagmi";
-import { CONTRACT_ADDRESSES, publicClient } from "~/lib/contracts";
+import { CONTRACT_ADDRESSES, contractReads } from "~/lib/contracts";
+import {
+  getTokenDetails,
+  parseTokenAmount,
+  TokenDetails,
+} from "~/lib/tokenUtils";
 import Header from "~/components/ui/Header";
 import TokenDeployment from "~/components/ui/TokenDeployment";
 
@@ -64,12 +69,17 @@ type Step = "search" | "token-setup" | "token-config" | "review";
 
 export default function AddAppPage() {
   const { context } = useMiniApp();
-  const { isConnected, address, registerApp, approveTokens } = useContract();
+  const {
+    isConnected,
+    address,
+    registerApp,
+    approveTokens,
+    registrationFeeInfo,
+  } = useContract();
   const { connect, connectors } = useConnect();
   const { disconnect: _disconnect } = useDisconnect();
   const [submitting, setSubmitting] = useState(false);
-  const [tokenAllowance, setTokenAllowance] = useState<bigint>(0n);
-  const [tokenBalance, setTokenBalance] = useState<bigint>(0n);
+  const [tokenDetails, setTokenDetails] = useState<TokenDetails | null>(null);
   const [checkingAllowance, setCheckingAllowance] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<FrameData[]>([]);
@@ -78,6 +88,7 @@ export default function AddAppPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [userFid, setUserFid] = useState<number | null>(null);
   const [currentStep, setCurrentStep] = useState<Step>("search");
+  const [tokenChecked, setTokenChecked] = useState(false);
 
   const [appData, setAppData] = useState<AppData>({
     name: "",
@@ -96,6 +107,10 @@ export default function AddAppPage() {
       appTokenAddress: tokenAddress,
     }));
     setCurrentStep("token-config");
+  };
+
+  const handleTokenChecked = (isChecked: boolean) => {
+    setTokenChecked(isChecked);
   };
 
   useEffect(() => {
@@ -136,8 +151,20 @@ export default function AddAppPage() {
     return userFid && frame.author.fid === userFid;
   };
 
-  const selectFrame = (frame: FrameData) => {
+  const selectFrame = async (frame: FrameData) => {
     setSelectedFrame(frame);
+
+    const allApps = await contractReads.getAllApps();
+    console.log(allApps);
+    console.log(frame.manifest.frame?.name);
+    const alreadyRegistered = allApps.filter(
+      (app) =>
+        app.name.toLowerCase() === frame.manifest.frame?.name.toLowerCase()
+    );
+    if (alreadyRegistered.length > 0) {
+      toast.error("This Mini App is already registered");
+      return;
+    }
 
     const frameData = frame.manifest.frame || frame.manifest.miniapp;
     if (frameData) {
@@ -160,73 +187,45 @@ export default function AddAppPage() {
     }
   };
 
-  const checkTokenAllowance = useCallback(async () => {
-    if (!appData.appTokenAddress || !appData.tokenAmount) return;
+  const checkTokenAllowance = async () => {
+    if (!appData.appTokenAddress || !address) return;
 
     setCheckingAllowance(true);
     try {
-      const allowance = await publicClient.readContract({
-        address: appData.appTokenAddress as `0x${string}`,
-        abi: [
-          {
-            inputs: [
-              { name: "owner", type: "address" },
-              { name: "spender", type: "address" },
-            ],
-            name: "allowance",
-            outputs: [{ name: "", type: "uint256" }],
-            stateMutability: "view",
-            type: "function",
-          },
-        ],
-        functionName: "allowance",
-        args: [
-          address as `0x${string}`,
-          CONTRACT_ADDRESSES.MINISCOUT as `0x${string}`,
-        ],
-      });
-
-      const balance = await publicClient.readContract({
-        address: appData.appTokenAddress as `0x${string}`,
-        abi: [
-          {
-            inputs: [{ name: "account", type: "address" }],
-            name: "balanceOf",
-            outputs: [{ name: "", type: "uint256" }],
-            stateMutability: "view",
-            type: "function",
-          },
-        ],
-        functionName: "balanceOf",
-        args: [address as `0x${string}`],
-      });
-
-      setTokenAllowance(allowance);
-      setTokenBalance(balance);
+      const details = await getTokenDetails(
+        appData.appTokenAddress as `0x${string}`,
+        address as `0x${string}`,
+        CONTRACT_ADDRESSES.MINISCOUT as `0x${string}`
+      );
+      setTokenDetails(details);
     } catch (error) {
-      console.error("Error checking allowance:", error);
-      toast.error("Failed to check token allowance");
+      console.error("Error checking token details:", error);
+      toast.error("Failed to fetch token details");
     } finally {
       setCheckingAllowance(false);
     }
-  }, [appData.appTokenAddress, appData.tokenAmount, address]);
+  };
 
   const handleApproveTokens = async () => {
-    if (!appData.appTokenAddress || !appData.tokenAmount) return;
+    if (!appData.appTokenAddress || !appData.tokenAmount || !tokenDetails)
+      return;
 
     setSubmitting(true);
     try {
-      await approveTokens(
-        appData.appTokenAddress as `0x${string}`,
+      const approvalAmount = parseTokenAmount(
         appData.tokenAmount,
+        tokenDetails.decimals
+      );
+
+      const _result = await approveTokens(
+        appData.appTokenAddress as `0x${string}`,
+        approvalAmount.toString(),
         CONTRACT_ADDRESSES.MINISCOUT as `0x${string}`
       );
 
       toast.success("Approval transaction submitted!");
 
-      setTimeout(() => {
-        checkTokenAllowance();
-      }, 5000);
+      await checkTokenAllowance();
     } catch (error: any) {
       console.error("Error approving tokens:", error);
       toast.error(error.message || "Failed to approve tokens");
@@ -236,15 +235,10 @@ export default function AddAppPage() {
   };
 
   useEffect(() => {
-    if (appData.appTokenAddress && appData.tokenAmount && address) {
+    if (appData.appTokenAddress && address) {
       checkTokenAllowance();
     }
-  }, [
-    appData.appTokenAddress,
-    appData.tokenAmount,
-    address,
-    checkTokenAllowance,
-  ]);
+  }, [appData.appTokenAddress, address]);
 
   const handleSubmit = async () => {
     if (!isConnected || !address) {
@@ -270,29 +264,53 @@ export default function AddAppPage() {
       return;
     }
 
-    const tokenAmount = parseEther(appData.tokenAmount);
-    if (tokenAllowance < tokenAmount) {
+    if (!tokenDetails) {
+      toast.error("Token details not loaded. Please try again.");
+      return;
+    }
+
+    const tokenAmount = parseTokenAmount(
+      appData.tokenAmount,
+      tokenDetails.decimals
+    );
+    if (tokenDetails.allowance < tokenAmount) {
       toast.error("Insufficient token allowance. Please approve tokens first.");
       return;
     }
 
-    if (tokenBalance < tokenAmount) {
+    if (tokenDetails.balance < tokenAmount) {
       toast.error("Insufficient token balance");
       return;
     }
 
     setSubmitting(true);
     try {
+      // Calculate registration fee based on new contract logic
+      let registrationFee = 0n;
+      if (
+        registrationFeeInfo?.totalApps !== undefined &&
+        registrationFeeInfo.totalApps >= 100n &&
+        registrationFeeInfo.isApplicable &&
+        registrationFeeInfo.fee
+      ) {
+        registrationFee = registrationFeeInfo.fee;
+      }
+
       await registerApp(
         appData.name,
         appData.description,
+        userFid || 0,
         appData.miniappUrl,
         appData.miniappUrl,
         appData.iconUrl,
         appData.appId,
-        appData.tokenAmount,
-        appData.rewardPerReview,
-        appData.appTokenAddress as `0x${string}`
+        parseTokenAmount(appData.tokenAmount, tokenDetails.decimals).toString(),
+        parseTokenAmount(
+          appData.rewardPerReview,
+          tokenDetails.decimals
+        ).toString(),
+        appData.appTokenAddress as `0x${string}`,
+        registrationFee
       );
 
       toast.success("App registered successfully!");
@@ -309,14 +327,18 @@ export default function AddAppPage() {
       case "search":
         return ownershipVerified && selectedFrame;
       case "token-setup":
-        return appData.appTokenAddress;
+        return appData.appTokenAddress && tokenChecked;
       case "token-config":
         return (
           appData.tokenAmount &&
           appData.rewardPerReview &&
           appData.miniappUrl &&
-          tokenBalance >= parseEther(appData.tokenAmount || "0") &&
-          tokenAllowance >= parseEther(appData.tokenAmount || "0")
+          tokenDetails &&
+          tokenDetails.balance >=
+            parseTokenAmount(appData.tokenAmount, tokenDetails.decimals) &&
+          tokenDetails.allowance >=
+            parseTokenAmount(appData.tokenAmount, tokenDetails.decimals) &&
+          BigInt(appData.rewardPerReview) <= BigInt(appData.tokenAmount)
         );
       default:
         return false;
@@ -354,9 +376,10 @@ export default function AddAppPage() {
     if (currentStep === step) return "current";
     if (
       (step === "search" && ownershipVerified) ||
-      (step === "token-setup" && appData.appTokenAddress) ||
+      (step === "token-setup" && appData.appTokenAddress && tokenChecked) ||
       (step === "token-config" &&
         appData.tokenAmount &&
+        BigInt(appData.rewardPerReview) <= BigInt(appData.tokenAmount) &&
         appData.rewardPerReview &&
         appData.miniappUrl) ||
       (step === "review" && currentStep === "review")
@@ -390,8 +413,9 @@ export default function AddAppPage() {
         ) : (
           <div className="space-y-8">
             {/* Progress Steps */}
-            <div className="bg-[#ED775A]/10 rounded-xl shadow-xl p-8 border border-[#FAD691]/30">
-              <div className="flex items-center justify-between mb-8">
+            <div className="bg-[#ED775A]/10 rounded-xl shadow-xl p-6 border border-[#FAD691]/30">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
                   Steps
                 </h2>
@@ -404,69 +428,112 @@ export default function AddAppPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between overflow-x-auto">
-                {[
-                  { key: "search", label: "Select App" },
-                  { key: "token-setup", label: "Setup Token" },
-                  { key: "token-config", label: "Configure Rewards" },
-                  { key: "review", label: "Review & Register" },
-                ].map((step, index) => (
-                  <div
-                    key={step.key}
-                    className="flex items-center flex-shrink-0"
-                  >
-                    <div
-                      className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                        getStepStatus(step.key as Step) === "completed"
-                          ? "bg-[#FAD691] border-[#FAD691] text-[#0F0E0E]"
-                          : getStepStatus(step.key as Step) === "current"
-                          ? "bg-[#ED775A] border-[#FAD691] text-white"
-                          : "bg-[#ED775A]/10 border-[#FAD691]/30 text-[#C9CDCF]"
-                      }`}
-                    >
-                      {getStepStatus(step.key as Step) === "completed" ? (
-                        <CheckCircle className="w-6 h-6" />
-                      ) : (
-                        <span className="text-sm font-medium arimo-600">
-                          {index + 1}
-                        </span>
-                      )}
-                    </div>
-                    <span
-                      className={`ml-3 text-sm font-medium whitespace-nowrap arimo-600 ${
-                        getStepStatus(step.key as Step) === "completed"
-                          ? "text-[#FAD691]"
-                          : getStepStatus(step.key as Step) === "current"
-                          ? "text-[#FAD691]"
-                          : "text-[#C9CDCF]"
-                      }`}
-                    >
-                      {step.label}
-                    </span>
-                    {index < 3 && (
+              {/* New Horizontal Stepper */}
+              <div className="relative">
+                <div className="flex justify-between items-center">
+                  {[
+                    { key: "search", label: "Select App" },
+                    { key: "token-setup", label: "Setup Token" },
+                    { key: "token-config", label: "Configure" },
+                    { key: "review", label: "Register" },
+                  ].map((step, index) => {
+                    const status = getStepStatus(step.key as Step);
+
+                    return (
                       <div
-                        className={`w-12 h-1 mx-3 rounded-full ${
-                          getStepStatus(step.key as Step) === "completed"
-                            ? "bg-[#FAD691]"
-                            : "bg-[#FAD691]/30"
-                        }`}
-                      />
-                    )}
-                  </div>
-                ))}
+                        key={step.key}
+                        className="flex flex-col items-center text-center flex-1"
+                      >
+                        {/* Step Circle */}
+                        <div
+                          className={`flex items-center justify-center w-10 h-10 rounded-full border-2 relative z-10
+                ${
+                  status === "completed"
+                    ? "bg-[#FAD691] border-[#FAD691] text-[#0F0E0E]"
+                    : status === "current"
+                    ? "bg-[#ED775A] border-[#FAD691] text-white"
+                    : "bg-[#ED775A]/10 border-[#FAD691]/30 text-[#C9CDCF]"
+                }`}
+                        >
+                          {status === "completed" ? (
+                            <CheckCircle className="w-6 h-6" />
+                          ) : (
+                            <span className="text-sm font-medium arimo-600">
+                              {index + 1}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Label */}
+                        <span
+                          className={`mt-2 text-xs font-medium arimo-600 ${
+                            status === "completed"
+                              ? "text-[#FAD691]"
+                              : status === "current"
+                              ? "text-[#FAD691]"
+                              : "text-[#C9CDCF]"
+                          }`}
+                        >
+                          {step.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Connector Line */}
+                <div className="absolute top-5 left-0 right-0 h-0.5 bg-[#FAD691]/30 -z-0" />
+                <div
+                  className="absolute top-5 left-0 h-0.5 bg-[#FAD691] -z-0 transition-all duration-500"
+                  style={{
+                    width: `${
+                      ([
+                        "search",
+                        "token-setup",
+                        "token-config",
+                        "review",
+                      ].indexOf(currentStep) /
+                        (4 - 1)) *
+                      100
+                    }%`,
+                  }}
+                />
               </div>
             </div>
 
             {/* Registration Fee Info */}
-            <div className="bg-[#ED775A]/10 border border-[#FAD691]/30 rounded-xl p-6">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-[#FAD691] font-medium arimo-600">
-                  Registration Fee:
+                <span className="text-sm font-medium text-gray-300">
+                  Registration Fee
                 </span>
-                <span className="text-[#FAD691] font-bold arimo-700">
-                  {"0.0001"} ETH
+                <span className="text-base font-semibold text-[#FAD691]">
+                  {registrationFeeInfo?.totalApps !== undefined &&
+                  registrationFeeInfo.totalApps < 100n
+                    ? "Free (First 100)"
+                    : registrationFeeInfo?.isApplicable &&
+                      registrationFeeInfo.fee
+                    ? `${formatEther(registrationFeeInfo.fee)} ETH`
+                    : "Free"}
                 </span>
               </div>
+
+              {registrationFeeInfo?.totalApps !== undefined && (
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs text-gray-400">
+                    {registrationFeeInfo.totalApps < 100n
+                      ? `Free for first 100 apps (${registrationFeeInfo.totalApps}/100 used)`
+                      : "Registration fee applies after 100 apps"}
+                  </p>
+
+                  {registrationFeeInfo.totalApps >= 100n &&
+                    !registrationFeeInfo.isApplicable && (
+                      <p className="text-xs text-gray-500 italic">
+                        Fees are currently disabled
+                      </p>
+                    )}
+                </div>
+              )}
             </div>
 
             {/* Step 1: Mini app Search */}
@@ -502,7 +569,6 @@ export default function AddAppPage() {
                       )}
                     </button>
                   </div>
-
                   {/* User FID Info */}
                   {userFid && (
                     <div className="mb-6 p-4 bg-[#FAD691]/20 rounded-xl border border-[#FAD691]/30">
@@ -517,7 +583,6 @@ export default function AddAppPage() {
                       </div>
                     </div>
                   )}
-
                   {/* Search Results */}
                   {searchResults.length > 0 && (
                     <div className="space-y-4">
@@ -601,62 +666,24 @@ export default function AddAppPage() {
                     </div>
                   )}
 
-                  {/* Ownership Status */}
-                  {selectedFrame && (
-                    <div className="mt-6 p-4 bg-[#FAD691]/20 rounded-xl border border-[#FAD691]/30">
-                      <div className="flex items-start space-x-3">
-                        {ownershipVerified ? (
-                          <CheckCircle className="w-6 h-6 text-[#FAD691] flex-shrink-0 mt-0.5" />
-                        ) : (
-                          <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
-                        )}
-                        <span
-                          className={`text-sm font-medium break-words arimo-600 ${
-                            ownershipVerified
-                              ? "text-[#FAD691]"
-                              : "text-red-400"
-                          }`}
-                        >
-                          {ownershipVerified
-                            ? "Mini App selected - You can register this app"
-                            : "You are not the owner of this Mini app"}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Next Step Button */}
-                  {canProceedToNextStep() && (
-                    <div className="mt-8 flex justify-center">
-                      <Button
-                        onClick={handleNextStep}
-                        className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white px-8 py-4 flex items-center space-x-3 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 arimo-600"
-                      >
-                        <span>Continue to Token Setup</span>
-                        <ArrowRight className="w-5 h-5" />
-                      </Button>
-                    </div>
-                  )}
+                  <div className="mt-8 flex justify-center"></div>
                 </div>
               </div>
             )}
 
             {/* Step 2: Token Setup */}
             {currentStep === "token-setup" && (
-              <div className="bg-[#ED775A]/10 rounded-xl shadow-xl p-8 overflow-hidden border border-[#FAD691]/30">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
-                    Step 2: Setup Your Token
+              <div className="bg-[#ED775A]/10 rounded-xl shadow-xl p-6 border border-[#FAD691]/30">
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
+                    Add Your Token
                   </h3>
-                  <p className="text-[#C9CDCF] arimo-400">
-                    Deploy a new token on Zora for your app rewards or use an
-                    existing token.
-                  </p>
                 </div>
 
-                <div className="max-w-2xl mx-auto">
+                <div className="max-w-lg mx-auto">
                   <TokenDeployment
                     onTokenDeployed={handleTokenDeployed}
+                    onTokenChecked={handleTokenChecked}
                     tokenImage={
                       selectedFrame?.manifest.frame?.icon_url ||
                       selectedFrame?.manifest.miniapp?.icon_url ||
@@ -664,25 +691,14 @@ export default function AddAppPage() {
                     }
                   />
 
-                  {/* Navigation Buttons */}
-                  <div className="mt-8 flex justify-between">
+                  {/* Navigation */}
+                  <div className="mt-6 flex justify-between">
                     <Button
                       onClick={handlePreviousStep}
-                      className="bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 px-6 py-3 flex items-center space-x-2 rounded-xl border border-[#FAD691]/30 transition-all duration-300 hover:scale-105 arimo-600"
+                      className="bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 px-4 py-2 rounded-lg border border-[#FAD691]/30 arimo-600"
                     >
-                      <ArrowLeft className="w-5 h-5" />
-                      <span>Back </span>
+                      Back
                     </Button>
-
-                    {canProceedToNextStep() && (
-                      <Button
-                        onClick={handleNextStep}
-                        className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white px-8 py-3 flex items-center space-x-3 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 arimo-600"
-                      >
-                        <span>Continue</span>
-                        <ArrowRight className="w-5 h-5" />
-                      </Button>
-                    )}
                   </div>
                 </div>
               </div>
@@ -690,192 +706,136 @@ export default function AddAppPage() {
 
             {/* Step 3: Token Configuration */}
             {currentStep === "token-config" && (
-              <div className="bg-[#ED775A]/10 rounded-xl shadow-xl p-8 overflow-hidden border border-[#FAD691]/30">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
-                    Step 3: Configure Rewards & App Details
+              <div className="bg-[#ED775A]/10 rounded-xl shadow-xl p-6 border border-[#FAD691]/30">
+                <div className="text-center mb-6">
+                  <h3 className="text-xl font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
+                    Set Rewards
                   </h3>
-                  <p className="text-[#C9CDCF] arimo-400">
-                    Set up your token rewards and app configuration
-                  </p>
                 </div>
 
-                <div className="max-w-4xl mx-auto">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-[#FAD691]/10 rounded-xl p-6 border border-[#FAD691]/20">
-                      <Label
-                        htmlFor="tokenAmount"
-                        className="text-sm font-medium text-[#FAD691] arimo-600"
-                      >
-                        Total Token Amount *
-                      </Label>
-                      <Input
-                        id="tokenAmount"
-                        type="text"
-                        value={appData.tokenAmount}
-                        onChange={(e) =>
-                          setAppData({
-                            ...appData,
-                            tokenAmount: e.target.value,
-                          })
-                        }
-                        placeholder="1000"
-                        className="mt-2"
-                      />
-                      <p className="text-xs text-[#C9CDCF] mt-2 arimo-400">
-                        Total tokens to allocate for rewards
-                      </p>
-                    </div>
-
-                    <div className="bg-[#FAD691]/10 rounded-xl p-6 border border-[#FAD691]/20">
-                      <Label
-                        htmlFor="rewardPerReview"
-                        className="text-sm font-medium text-[#FAD691] arimo-600"
-                      >
-                        Reward Per Review *
-                      </Label>
-                      <Input
-                        id="rewardPerReview"
-                        type="text"
-                        value={appData.rewardPerReview}
-                        onChange={(e) =>
-                          setAppData({
-                            ...appData,
-                            rewardPerReview: e.target.value,
-                          })
-                        }
-                        placeholder="10"
-                        className="mt-2"
-                      />
-                      <p className="text-xs text-[#C9CDCF] mt-2 arimo-400">
-                        Tokens given per review
-                      </p>
-                    </div>
-
-                    <div className="bg-[#FAD691]/10 rounded-xl p-6 border border-[#FAD691]/20">
-                      <Label
-                        htmlFor="miniappUrl"
-                        className="text-sm font-medium text-[#FAD691] arimo-600"
-                      >
-                        MiniApp URL *
-                      </Label>
-                      <Input
-                        id="miniappUrl"
-                        type="text"
-                        value={appData.miniappUrl}
-                        onChange={(e) =>
-                          setAppData({
-                            ...appData,
-                            miniappUrl: e.target.value,
-                          })
-                        }
-                        placeholder="https://your-miniapp-url.com"
-                        className="mt-2"
-                      />
-                      <p className="text-xs text-[#C9CDCF] mt-2 arimo-400">
-                        The URL where users can access your MiniApp
-                      </p>
-                    </div>
+                <div className="max-w-lg mx-auto space-y-4">
+                  <div className="bg-[#FAD691]/10 rounded-lg p-4 border border-[#FAD691]/20">
+                    <Label
+                      htmlFor="tokenAmount"
+                      className="text-sm font-medium text-[#FAD691] arimo-600"
+                    >
+                      Total Tokens
+                    </Label>
+                    <Input
+                      id="tokenAmount"
+                      type="number"
+                      value={appData.tokenAmount}
+                      onChange={(e) => {
+                        setAppData({
+                          ...appData,
+                          tokenAmount: e.target.value,
+                        });
+                      }}
+                      placeholder="1000"
+                      className="mt-2"
+                    />
                   </div>
 
-                  {/* Token Allowance Status */}
-                  {appData.appTokenAddress && appData.tokenAmount && (
-                    <div className="mb-8 p-6 bg-[#FAD691]/20 rounded-xl border border-[#FAD691]/30">
-                      <h4 className="text-lg font-semibold text-[#FAD691] mb-4 edu-nsw-act-cursive-600">
-                        Token Status
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-[#FAD691] whitespace-nowrap arimo-600">
-                            Balance:
-                          </span>
-                          <span
-                            className={`text-sm font-semibold truncate arimo-600 ${
-                              tokenBalance <
-                              parseEther(appData.tokenAmount || "0")
-                                ? "text-red-400"
-                                : "text-[#C9CDCF]"
-                            }`}
-                          >
-                            {checkingAllowance
-                              ? "Checking..."
-                              : formatEther(tokenBalance)}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-[#FAD691] whitespace-nowrap arimo-600">
-                            Allowance:
-                          </span>
-                          <span
-                            className={`text-sm font-semibold truncate arimo-600 ${
-                              tokenAllowance <
-                              parseEther(appData.tokenAmount || "0")
-                                ? "text-red-400"
-                                : "text-[#C9CDCF]"
-                            }`}
-                          >
-                            {checkingAllowance
-                              ? "Checking..."
-                              : formatEther(tokenAllowance)}
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2 sm:col-span-2 lg:col-span-1">
-                          {checkingAllowance ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#FAD691] border-t-transparent flex-shrink-0"></div>
-                          ) : tokenAllowance >=
-                              parseEther(appData.tokenAmount || "0") &&
-                            tokenBalance >=
-                              parseEther(appData.tokenAmount || "0") ? (
-                            <CheckCircle className="w-4 h-4 text-[#FAD691] flex-shrink-0" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                          )}
-                          <span
-                            className={`text-sm arimo-600 ${
-                              tokenAllowance >=
-                                parseEther(appData.tokenAmount || "0") &&
-                              tokenBalance >=
-                                parseEther(appData.tokenAmount || "0")
-                                ? "text-[#FAD691]"
-                                : "text-red-400"
-                            }`}
-                          >
-                            {tokenAllowance >=
-                              parseEther(appData.tokenAmount || "0") &&
-                            tokenBalance >=
-                              parseEther(appData.tokenAmount || "0")
-                              ? "Ready"
-                              : "Needs Action"}
-                          </span>
-                        </div>
+                  <div className="bg-[#FAD691]/10 rounded-lg p-4 border border-[#FAD691]/20">
+                    <Label
+                      htmlFor="rewardPerReview"
+                      className="text-sm font-medium text-[#FAD691] arimo-600"
+                    >
+                      Per Review
+                    </Label>
+                    <Input
+                      id="rewardPerReview"
+                      type="number"
+                      value={appData.rewardPerReview}
+                      onChange={(e) =>
+                        setAppData({
+                          ...appData,
+                          rewardPerReview: e.target.value,
+                        })
+                      }
+                      placeholder="10"
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div className="bg-[#FAD691]/10 rounded-lg p-4 border border-[#FAD691]/20">
+                    <Label
+                      htmlFor="miniappUrl"
+                      className="text-sm font-medium text-[#FAD691] arimo-600"
+                    >
+                      App URL
+                    </Label>
+                    <Input
+                      id="miniappUrl"
+                      type="text"
+                      value={appData.miniappUrl}
+                      onChange={(e) =>
+                        setAppData({
+                          ...appData,
+                          miniappUrl: e.target.value,
+                        })
+                      }
+                      placeholder="https://your-app.com"
+                      className="mt-2"
+                    />
+                  </div>
+
+                  {/* Token Status */}
+                  {appData.appTokenAddress && tokenDetails && (
+                    <div className="p-3 bg-[#FAD691]/10 rounded-lg border border-[#FAD691]/20">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-[#FAD691] arimo-600">
+                          {tokenDetails.name} ({tokenDetails.symbol})
+                        </span>
+                        {checkingAllowance ? (
+                          <div className="animate-spin rounded-full h-3 w-3 border border-[#FAD691] border-t-transparent"></div>
+                        ) : tokenDetails.allowance >=
+                            parseTokenAmount(
+                              appData.tokenAmount || "0",
+                              tokenDetails.decimals
+                            ) &&
+                          tokenDetails.balance >=
+                            parseTokenAmount(
+                              appData.tokenAmount || "0",
+                              tokenDetails.decimals
+                            ) ? (
+                          <CheckCircle className="w-3 h-3 text-[#FAD691]" />
+                        ) : (
+                          <AlertCircle className="w-3 h-3 text-red-400" />
+                        )}
                       </div>
-                      {/* Validation Messages */}
-                      {tokenBalance <
-                        parseEther(appData.tokenAmount || "0") && (
-                        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
-                          <p className="text-sm text-red-800 mb-3 arimo-400">
-                            ❌ <strong>Insufficient Token Balance:</strong> You
-                            need at least {appData.tokenAmount} tokens. Current
-                            balance: {formatEther(tokenBalance)} tokens.
-                          </p>
+
+                      {/* Minimal Validation */}
+                      {tokenDetails.balance <
+                        parseTokenAmount(
+                          appData.tokenAmount || "0",
+                          tokenDetails.decimals
+                        ) && (
+                        <div className="mt-2 text-xs text-red-400 arimo-400">
+                          Insufficient balance
                         </div>
                       )}
 
-                      {tokenBalance >= parseEther(appData.tokenAmount || "0") &&
-                        tokenAllowance <
-                          parseEther(appData.tokenAmount || "0") && (
-                          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                            <p className="text-sm text-yellow-800 mb-3 arimo-400">
-                              ⚠️ <strong>Token Approval Required:</strong> You
-                              need to approve tokens before registering. Please
-                              approve at least {appData.tokenAmount} tokens.
-                            </p>
+                      {tokenDetails.balance >=
+                        parseTokenAmount(
+                          appData.tokenAmount || "0",
+                          tokenDetails.decimals
+                        ) &&
+                        tokenDetails.allowance <
+                          parseTokenAmount(
+                            appData.tokenAmount || "0",
+                            tokenDetails.decimals
+                          ) && (
+                          <div className="mt-2 flex items-center justify-between">
+                            <span className="text-xs text-yellow-400 arimo-400">
+                              Approval needed
+                            </span>
                             <Button
                               onClick={handleApproveTokens}
                               disabled={submitting}
-                              className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white px-4 py-2 rounded-lg arimo-600"
+                              className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white px-2 py-1 rounded text-xs arimo-600"
                             >
-                              {submitting ? "Approving..." : "Approve Tokens"}
+                              {submitting ? "..." : "Approve"}
                             </Button>
                           </div>
                         )}
@@ -886,21 +846,18 @@ export default function AddAppPage() {
                   <div className="flex justify-between">
                     <Button
                       onClick={handlePreviousStep}
-                      className="bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 px-6 py-3 flex items-center space-x-2 rounded-xl border border-[#FAD691]/30 transition-all duration-300 hover:scale-105 arimo-600"
+                      className="bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 px-4 py-2 rounded-lg border border-[#FAD691]/30 arimo-600"
                     >
-                      <ArrowLeft className="w-5 h-5" />
-                      <span>Back to Token Setup</span>
+                      Back
                     </Button>
 
-                    {canProceedToNextStep() && (
-                      <Button
-                        onClick={handleNextStep}
-                        className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white px-8 py-3 flex items-center space-x-3 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 arimo-600"
-                      >
-                        <span>Review & Register</span>
-                        <ArrowRight className="w-5 h-5" />
-                      </Button>
-                    )}
+                    <Button
+                      disabled={!canProceedToNextStep()}
+                      onClick={handleNextStep}
+                      className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white px-6 py-2 rounded-lg arimo-600"
+                    >
+                      Continue
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -920,50 +877,54 @@ export default function AddAppPage() {
 
                 <div className="max-w-4xl mx-auto space-y-6">
                   {/* App Details */}
-                  <div className="bg-[#FAD691]/10 rounded-xl p-6 border border-[#FAD691]/30">
-                    <h4 className="text-lg font-semibold text-[#FAD691] mb-4 edu-nsw-act-cursive-600">
-                      App Details
-                    </h4>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-sm text-[#C9CDCF] arimo-400">
-                          Name:
-                        </span>
-                        <p className="text-[#FAD691] font-medium break-words arimo-600">
-                          {appData.name}
-                        </p>
+                  <div className="bg-[#ED775A]/10 rounded-xl shadow-xl hover:shadow-2xl transition-all duration-500 border border-[#FAD691]/30 hover:border-[#FAD691]/60 group overflow-hidden">
+                    {/* Cover Header with Stretched Image */}
+                    <div className="relative h-32">
+                      <img
+                        src={appData.iconUrl} // 👈 or app.coverImage if you have a dedicated cover field
+                        alt={`${appData.name} cover`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/cover-fallback.png"; // 👈 add fallback cover
+                        }}
+                      />
+                      {/* Dark overlay for readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0F0E0E]/70 to-transparent" />
+
+                      {/* Floating Profile Icon */}
+                      <div className="absolute left-1/2 -bottom-10 -translate-x-1/2">
+                        <div className="w-20 h-20 rounded-xl overflow-hidden shadow-lg border-2 border-[#FAD691]/50 bg-[#0F0E0E]">
+                          <img
+                            src={appData.iconUrl}
+                            alt={appData.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = "/icon.png";
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-sm text-[#C9CDCF] arimo-400">
-                          App ID:
-                        </span>
-                        <p className="text-[#FAD691] font-medium break-words arimo-600">
-                          {appData.appId}
-                        </p>
-                      </div>
-                      <div className="lg:col-span-2">
-                        <span className="text-sm text-[#C9CDCF] arimo-400">
-                          Description:
-                        </span>
-                        <p className="text-[#C9CDCF] break-words arimo-400">
-                          {appData.description}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-[#C9CDCF] arimo-400">
-                          MiniApp URL:
-                        </span>
-                        <p className="text-[#FAD691] font-medium break-words arimo-600">
-                          {appData.miniappUrl}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-[#C9CDCF] arimo-400">
-                          Icon URL:
-                        </span>
-                        <p className="text-[#FAD691] font-medium break-words arimo-600">
-                          {appData.iconUrl}
-                        </p>
+                    </div>
+
+                    {/* App Info */}
+                    <div className="pt-14 px-6 pb-6 space-y-6 text-center">
+                      <h3 className="text-lg font-semibold text-[#FAD691] truncate edu-nsw-act-cursive-600">
+                        {appData.name}
+                      </h3>
+                      <p className="text-[#C9CDCF] text-sm line-clamp-2 arimo-400">
+                        {appData.description}
+                      </p>
+
+                      {/* Reward Info */}
+                      <div className="p-4 bg-gradient-to-r from-[#ED775A]/10 to-[#FAD691]/10 rounded-lg border border-[#FAD691]/20">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-[#FAD691] font-medium arimo-600">
+                            Reward per review:
+                          </span>
+                          <span className="text-[#C9CDCF] font-semibold arimo-600">
+                            {appData.rewardPerReview} tokens
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1011,8 +972,14 @@ export default function AddAppPage() {
                         <span className="text-[#C9CDCF] arimo-400">
                           Registration Fee:
                         </span>
-                        <span className="text-[#FAD691] font-medium arimo-600">
-                          0.0001 ETH
+                        <span className="text-[#FAD691] font-bold arimo-700">
+                          {registrationFeeInfo?.totalApps !== undefined &&
+                          registrationFeeInfo.totalApps < 100n
+                            ? "Free"
+                            : registrationFeeInfo?.isApplicable &&
+                              registrationFeeInfo.fee
+                            ? `${formatEther(registrationFeeInfo.fee)} ETH`
+                            : "Free"}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -1048,7 +1015,7 @@ export default function AddAppPage() {
                     className="bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 px-6 py-3 flex items-center space-x-2 rounded-xl border border-[#FAD691]/30 transition-all duration-300 hover:scale-105 arimo-600"
                   >
                     <ArrowLeft className="w-5 h-5" />
-                    <span>Back to Configuration</span>
+                    <span>Back </span>
                   </Button>
 
                   <Button
@@ -1062,12 +1029,17 @@ export default function AddAppPage() {
                       !appData.tokenAmount ||
                       !appData.rewardPerReview ||
                       !appData.appTokenAddress ||
-                      tokenAllowance < parseEther(appData.tokenAmount || "0") ||
+                      !tokenDetails ||
+                      tokenDetails.allowance <
+                        parseTokenAmount(
+                          appData.tokenAmount || "0",
+                          tokenDetails.decimals
+                        ) ||
                       !ownershipVerified
                     }
                     className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 arimo-600"
                   >
-                    {submitting ? "Registering..." : "Register App"}
+                    {submitting ? "Registering..." : "Register"}
                   </Button>
                 </div>
               </div>

@@ -1,266 +1,166 @@
 "use client";
 
-import {
-  useAccount,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-} from "wagmi";
-import { contractReads, contractWrites } from "~/lib/contracts";
-import { parseEther } from "viem";
-import { useState } from "react";
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { CONTRACT_ADDRESSES } from "~/lib/contracts";
+import MINISCOUT_ABI from "../utils/MiniScoutABI.json";
 
 export function useContract() {
   const { address, isConnected } = useAccount();
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Read contract data
+  // Read registration fee info
+  const { data: registrationFeeInfo } = useReadContract({
+    address: CONTRACT_ADDRESSES.MINISCOUT,
+    abi: MINISCOUT_ABI,
+    functionName: "appRegistrationFee",
+  });
+
+  const { data: registrationFeeApplicable } = useReadContract({
+    address: CONTRACT_ADDRESSES.MINISCOUT,
+    abi: MINISCOUT_ABI,
+    functionName: "registrationFeeApplicable",
+  });
+
   const { data: totalApps } = useReadContract({
-    ...contractWrites.registerApp,
+    address: CONTRACT_ADDRESSES.MINISCOUT,
+    abi: MINISCOUT_ABI,
     functionName: "getTotalApps",
   });
 
-  const { data: registrationFee } = useReadContract({
-    ...contractWrites.registerApp,
-    functionName: "appRegistrationFee",
-  }) as { data: bigint | undefined };
-
-  const { data: feedbackReward } = useReadContract({
-    ...contractWrites.registerApp,
-    functionName: "feedbackReward",
-  });
-
   // Write contract functions
-  const { writeContractAsync, data: hash, isPending } = useWriteContract();
+  const { writeContractAsync, isPending: isWriting } = useWriteContract();
 
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
-    hash,
-  });
-
-  // Register app function
   const registerApp = async (
     name: string,
     description: string,
+    ownerFid: number,
     homeUrl: string,
     miniappUrl: string,
     iconUrl: string,
     appId: string,
     tokenAmount: string,
     rewardPerReview: string,
-    appTokenAddress: `0x${string}`
+    appToken: `0x${string}`,
+    registrationFee?: bigint
   ) => {
-    if (!isConnected || !address) {
-      throw new Error("Please connect your wallet first");
-    }
+    if (!isConnected) throw new Error("Wallet not connected");
 
-    setIsLoading(true);
-    try {
-      await writeContractAsync({
-        ...contractWrites.registerApp,
-        args: [
-          name,
-          description,
-          homeUrl,
-          miniappUrl,
-          iconUrl,
-          appId,
-          parseEther(tokenAmount),
-          parseEther(rewardPerReview),
-          appTokenAddress,
-        ],
-        value: registrationFee ? registrationFee : parseEther("0.0001"), // Default fee
-      });
-    } catch (error) {
-      setIsLoading(false);
-      throw error;
-    }
+    const args = [
+      name,
+      description,
+      BigInt(ownerFid),
+      homeUrl,
+      miniappUrl,
+      iconUrl,
+      appId,
+      BigInt(tokenAmount),
+      BigInt(rewardPerReview),
+      appToken,
+    ] as const;
+
+    const result = await writeContractAsync({
+      address: CONTRACT_ADDRESSES.MINISCOUT,
+      abi: MINISCOUT_ABI,
+      functionName: "registerApp",
+      args,
+      value: registrationFee || 0n,
+    });
   };
 
-  // Submit feedback function
   const submitFeedback = async (
     appId: bigint,
     rating: number,
-    comment: string
+    comment: string,
+    fid: number
   ) => {
-    if (!isConnected || !address) {
-      throw new Error("Please connect your wallet first");
-    }
+    if (!isConnected) throw new Error("Wallet not connected");
 
-    setIsLoading(true);
-    try {
-      await writeContractAsync({
-        ...contractWrites.submitFeedback,
-        args: [appId, BigInt(rating), comment],
-      });
-    } catch (error) {
-      setIsLoading(false);
-      throw error;
-    }
+    return await writeContractAsync({
+      address: CONTRACT_ADDRESSES.MINISCOUT,
+      abi: MINISCOUT_ABI,
+      functionName: "submitFeedback",
+      args: [appId, BigInt(rating), comment, BigInt(fid)],
+    });
   };
 
-  // Add escrow function
   const addEscrow = async (
     appId: bigint,
     amount: string,
-    appTokenAddress: `0x${string}`
+    appToken: `0x${string}`
   ) => {
-    if (!isConnected || !address) {
-      throw new Error("Please connect your wallet first");
-    }
+    if (!isConnected) throw new Error("Wallet not connected");
 
-    setIsLoading(true);
-    try {
-      await writeContractAsync({
-        ...contractWrites.addEscrow,
-        args: [appId, parseEther(amount), appTokenAddress],
-      });
-    } catch (error) {
-      setIsLoading(false);
-      throw error;
-    }
+    return await writeContractAsync({
+      address: CONTRACT_ADDRESSES.MINISCOUT,
+      abi: MINISCOUT_ABI,
+      functionName: "addEscrow",
+      args: [appId, BigInt(amount), appToken],
+    });
   };
 
-  // Withdraw escrow function
-  const withdrawEscrow = async (
-    appId: bigint,
-    appTokenAddress: `0x${string}`
-  ) => {
-    if (!isConnected || !address) {
-      throw new Error("Please connect your wallet first");
-    }
+  const withdrawEscrow = async (appId: bigint) => {
+    if (!isConnected) throw new Error("Wallet not connected");
 
-    setIsLoading(true);
-    try {
-      await writeContractAsync({
-        ...contractWrites.withdrawEscrow,
-        args: [appId, appTokenAddress],
-      });
-    } catch (error) {
-      setIsLoading(false);
-      throw error;
-    }
+    return await writeContractAsync({
+      address: CONTRACT_ADDRESSES.MINISCOUT,
+      abi: MINISCOUT_ABI,
+      functionName: "withdrawEscrow",
+      args: [appId],
+    });
   };
 
-  // Deactivate app function
-  const deactivateApp = async (
-    appId: bigint,
-    appTokenAddress: `0x${string}`
-  ) => {
-    if (!isConnected || !address) {
-      throw new Error("Please connect your wallet first");
-    }
+  const deactivateApp = async (appId: bigint) => {
+    if (!isConnected) throw new Error("Wallet not connected");
 
-    setIsLoading(true);
-    try {
-      await writeContractAsync({
-        ...contractWrites.deactivateApp,
-        args: [appId, appTokenAddress],
-      });
-    } catch (error) {
-      setIsLoading(false);
-      throw error;
-    }
+    return await writeContractAsync({
+      address: CONTRACT_ADDRESSES.MINISCOUT,
+      abi: MINISCOUT_ABI,
+      functionName: "deactivateApp",
+      args: [appId],
+    });
   };
 
-  // Claim protocol rewards function
-  const claimProtocolRewards = async () => {
-    if (!isConnected || !address) {
-      throw new Error("Please connect your wallet first");
-    }
-
-    setIsLoading(true);
-    try {
-      await writeContractAsync({
-        ...contractWrites.claimProtocolRewards,
-      });
-    } catch (error) {
-      setIsLoading(false);
-      throw error;
-    }
-  };
-
-  // Approve tokens function
   const approveTokens = async (
     tokenAddress: `0x${string}`,
     amount: string,
-    spenderAddress: `0x${string}`
+    spender: `0x${string}`
   ) => {
-    if (!isConnected || !address) {
-      throw new Error("Please connect your wallet first");
-    }
+    if (!isConnected) throw new Error("Wallet not connected");
 
-    setIsLoading(true);
-    try {
-      await writeContractAsync({
-        address: tokenAddress,
-        abi: [
-          {
-            inputs: [
-              { name: "spender", type: "address" },
-              { name: "amount", type: "uint256" },
-            ],
-            name: "approve",
-            outputs: [{ name: "", type: "bool" }],
-            stateMutability: "nonpayable",
-            type: "function",
-          },
-        ],
-        functionName: "approve",
-        args: [spenderAddress, parseEther(amount)],
-      });
-    } catch (error) {
-      setIsLoading(false);
-      throw error;
-    }
-  };
+    const _result = await writeContractAsync({
+      address: tokenAddress,
+      abi: [
+        {
+          inputs: [
+            { name: "spender", type: "address" },
+            { name: "amount", type: "uint256" },
+          ],
+          name: "approve",
+          outputs: [{ name: "", type: "bool" }],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+      ],
+      functionName: "approve",
+      args: [spender, BigInt(amount)],
+    });
 
-  // Check if user has given feedback for an app
-  const hasUserGivenFeedback = async (appId: bigint) => {
-    if (!isConnected || !address) return false;
-
-    try {
-      return await contractReads.hasUserGivenFeedback(appId, address);
-    } catch (error) {
-      console.error("Error checking user feedback:", error);
-      return false;
-    }
-  };
-
-  // Get user rewards
-  const getUserRewards = async () => {
-    if (!isConnected || !address) return 0n;
-
-    try {
-      const rewards = await contractReads.getUserRewards(address);
-      return rewards || 0n;
-    } catch (error) {
-      console.error("Error getting user rewards:", error);
-      return 0n;
-    }
+    return _result;
   };
 
   return {
-    // State
-    isConnected,
     address,
-    isLoading: isLoading || isPending || isConfirming,
-    isSuccess,
-    hash,
-
-    // Contract data
-    totalApps,
-    registrationFee,
-    feedbackReward,
-
-    // Functions
+    isConnected,
+    registrationFeeInfo: {
+      fee: registrationFeeInfo as bigint | undefined,
+      isApplicable: registrationFeeApplicable as boolean | undefined,
+      totalApps: totalApps as bigint | undefined,
+    },
     registerApp,
     submitFeedback,
     addEscrow,
     withdrawEscrow,
     deactivateApp,
-    claimProtocolRewards,
     approveTokens,
-    hasUserGivenFeedback,
-    getUserRewards,
+    isLoading: isWriting,
   };
 }
