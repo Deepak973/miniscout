@@ -16,7 +16,7 @@ import { Label } from "~/components/ui/label";
 import { useMiniApp } from "@neynar/react";
 import toast from "react-hot-toast";
 import { useContract } from "~/hooks/useContract";
-import { formatEther } from "viem";
+import { formatEther, formatUnits } from "viem";
 import { useConnect, useDisconnect } from "wagmi";
 import { CONTRACT_ADDRESSES, contractReads } from "~/lib/contracts";
 import {
@@ -161,10 +161,10 @@ export default function AddAppPage() {
       (app) =>
         app.name.toLowerCase() === frame.manifest.frame?.name.toLowerCase()
     );
-    if (alreadyRegistered.length > 0) {
-      toast.error("This Mini App is already registered");
-      return;
-    }
+    // if (alreadyRegistered.length > 0) {
+    //   toast.error("This Mini App is already registered");
+    //   return;
+    // }
 
     const frameData = frame.manifest.frame || frame.manifest.miniapp;
     if (frameData) {
@@ -190,6 +190,7 @@ export default function AddAppPage() {
   const checkTokenAllowance = async () => {
     if (!appData.appTokenAddress || !address) return;
 
+    console.log("checking allownace");
     setCheckingAllowance(true);
     try {
       const details = await getTokenDetails(
@@ -217,7 +218,7 @@ export default function AddAppPage() {
         tokenDetails.decimals
       );
 
-      const _result = await approveTokens(
+      await approveTokens(
         appData.appTokenAddress as `0x${string}`,
         approvalAmount.toString(),
         CONTRACT_ADDRESSES.MINISCOUT as `0x${string}`
@@ -225,7 +226,10 @@ export default function AddAppPage() {
 
       toast.success("Approval transaction submitted!");
 
-      await checkTokenAllowance();
+      // Wait a bit and then check allowance again
+      setTimeout(() => {
+        checkTokenAllowance();
+      }, 2000);
     } catch (error: any) {
       console.error("Error approving tokens:", error);
       toast.error(error.message || "Failed to approve tokens");
@@ -689,6 +693,7 @@ export default function AddAppPage() {
                       selectedFrame?.manifest.miniapp?.icon_url ||
                       "/icon.png"
                     }
+                    tokenName={appData.name}
                   />
 
                   {/* Navigation */}
@@ -726,14 +731,34 @@ export default function AddAppPage() {
                       type="number"
                       value={appData.tokenAmount}
                       onChange={(e) => {
+                        const value = e.target.value;
                         setAppData({
                           ...appData,
-                          tokenAmount: e.target.value,
+                          tokenAmount: value,
                         });
+
+                        // Validate total tokens is not less than reward per review
+                        if (
+                          value &&
+                          appData.rewardPerReview &&
+                          BigInt(value) < BigInt(appData.rewardPerReview)
+                        ) {
+                          toast.error(
+                            "Total tokens cannot be less than reward per review"
+                          );
+                        }
                       }}
                       placeholder="1000"
                       className="mt-2"
                     />
+                    {appData.tokenAmount &&
+                      appData.rewardPerReview &&
+                      BigInt(appData.tokenAmount) <
+                        BigInt(appData.rewardPerReview) && (
+                        <div className="mt-2 text-xs text-red-400 arimo-400">
+                          ⚠️ Total tokens cannot be less than reward per review
+                        </div>
+                      )}
                   </div>
 
                   <div className="bg-[#FAD691]/10 rounded-lg p-4 border border-[#FAD691]/20">
@@ -747,15 +772,35 @@ export default function AddAppPage() {
                       id="rewardPerReview"
                       type="number"
                       value={appData.rewardPerReview}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const value = e.target.value;
                         setAppData({
                           ...appData,
-                          rewardPerReview: e.target.value,
-                        })
-                      }
+                          rewardPerReview: value,
+                        });
+
+                        // Validate reward per review doesn't exceed total tokens
+                        if (
+                          value &&
+                          appData.tokenAmount &&
+                          BigInt(value) > BigInt(appData.tokenAmount)
+                        ) {
+                          toast.error(
+                            "Reward per review cannot exceed total tokens"
+                          );
+                        }
+                      }}
                       placeholder="10"
                       className="mt-2"
                     />
+                    {appData.rewardPerReview &&
+                      appData.tokenAmount &&
+                      BigInt(appData.rewardPerReview) >
+                        BigInt(appData.tokenAmount) && (
+                        <div className="mt-2 text-xs text-red-400 arimo-400">
+                          ⚠️ Reward per review cannot exceed total tokens
+                        </div>
+                      )}
                   </div>
 
                   <div className="bg-[#FAD691]/10 rounded-lg p-4 border border-[#FAD691]/20">
@@ -783,7 +828,7 @@ export default function AddAppPage() {
                   {/* Token Status */}
                   {appData.appTokenAddress && tokenDetails && (
                     <div className="p-3 bg-[#FAD691]/10 rounded-lg border border-[#FAD691]/20">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-[#FAD691] arimo-600">
                           {tokenDetails.name} ({tokenDetails.symbol})
                         </span>
@@ -805,14 +850,82 @@ export default function AddAppPage() {
                         )}
                       </div>
 
-                      {/* Minimal Validation */}
+                      {/* Token Details Grid */}
+                      <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                        <div>
+                          <span className="text-[#C9CDCF] arimo-400">
+                            Balance:
+                          </span>
+                          <span className="ml-1 text-[#C9CDCF] font-medium">
+                            {formatUnits(
+                              tokenDetails.balance,
+                              tokenDetails.decimals
+                            )}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[#C9CDCF] arimo-400">
+                            Allowance:
+                          </span>
+                          <span className="ml-1 text-[#C9CDCF] font-medium">
+                            {formatUnits(
+                              tokenDetails.allowance,
+                              tokenDetails.decimals
+                            )}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[#C9CDCF] arimo-400">
+                            Required:
+                          </span>
+                          <span className="ml-1 text-[#C9CDCF] font-medium">
+                            {appData.tokenAmount || "0"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[#C9CDCF] arimo-400">
+                            Status:
+                          </span>
+                          <span
+                            className={`ml-1 font-medium ${
+                              tokenDetails.allowance >=
+                                parseTokenAmount(
+                                  appData.tokenAmount || "0",
+                                  tokenDetails.decimals
+                                ) &&
+                              tokenDetails.balance >=
+                                parseTokenAmount(
+                                  appData.tokenAmount || "0",
+                                  tokenDetails.decimals
+                                )
+                                ? "text-green-400"
+                                : "text-yellow-400"
+                            }`}
+                          >
+                            {tokenDetails.allowance >=
+                              parseTokenAmount(
+                                appData.tokenAmount || "0",
+                                tokenDetails.decimals
+                              ) &&
+                            tokenDetails.balance >=
+                              parseTokenAmount(
+                                appData.tokenAmount || "0",
+                                tokenDetails.decimals
+                              )
+                              ? "Ready"
+                              : "Needs Action"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Validation Messages */}
                       {tokenDetails.balance <
                         parseTokenAmount(
                           appData.tokenAmount || "0",
                           tokenDetails.decimals
                         ) && (
                         <div className="mt-2 text-xs text-red-400 arimo-400">
-                          Insufficient balance
+                          ⚠️ Insufficient balance
                         </div>
                       )}
 
@@ -828,7 +941,7 @@ export default function AddAppPage() {
                           ) && (
                           <div className="mt-2 flex items-center justify-between">
                             <span className="text-xs text-yellow-400 arimo-400">
-                              Approval needed
+                              ⚠️ Approval needed
                             </span>
                             <Button
                               onClick={handleApproveTokens}

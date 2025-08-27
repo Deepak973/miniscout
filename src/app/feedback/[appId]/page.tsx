@@ -184,7 +184,7 @@ export default function FeedbackPage({
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#C9CDCF] mx-auto mb-4"></div>
-            <p className="text-[#C9CDCF] arimo-400">Loading app details...</p>
+            <p className="text-[#FAD691] arimo-400">Loading app details...</p>
           </div>
         </div>
       </div>

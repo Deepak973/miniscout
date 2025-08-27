@@ -9,12 +9,14 @@ import { formatEther } from "viem";
 import { useConnect } from "wagmi";
 import toast from "react-hot-toast";
 import Header from "~/components/ui/Header";
+import { useMiniApp } from "@neynar/react";
 
 export default function MyAppsPage() {
   const { isConnected, address } = useContract();
   const { connect, connectors } = useConnect();
   const [myApps, setMyApps] = useState<(App & { averageRating: number })[]>([]);
   const [loading, setLoading] = useState(true);
+  const { context: _context } = useMiniApp();
 
   const fetchMyApps = useCallback(async () => {
     if (!address) return;
@@ -23,7 +25,9 @@ export default function MyAppsPage() {
     try {
       const allApps = await contractReads.getAllApps();
       const userApps = allApps.filter(
-        (app) => app.owner.toLowerCase() === address.toLowerCase()
+        (app) =>
+          app.owner.toLowerCase() === address.toLowerCase() ||
+          Number(app.ownerFid) === _context?.user?.fid
       );
       setMyApps(userApps);
     } catch (error) {

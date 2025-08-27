@@ -142,14 +142,14 @@ export default function Header({
             ) : (
               <div className="relative">
                 <button
-                  onClick={() => setWalletDropdownOpen(!walletDropdownOpen)}
+                  onClick={() => connect({ connector: connectors[0] })}
                   className="flex items-center space-x-2 px-4 py-2 bg-[#ED775A] text-white rounded-md hover:bg-[#FAD691] hover:text-[#0F0E0E] transition-colors arimo-600"
                 >
                   <Wallet className="w-4 h-4" />
                   <ChevronDown className="w-4 h-4" />
                 </button>
 
-                {walletDropdownOpen && (
+                {/* {walletDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-64 bg-[#0F0E0E] rounded-xl shadow-xl border-2 border-[#FAD691]/30 z-50">
                     <div className="py-2">
                       <div className="px-4 py-3 text-sm text-[#FAD691] border-b border-[#FAD691]/20">
@@ -174,7 +174,7 @@ export default function Header({
                       ))}
                     </div>
                   </div>
-                )}
+                )} */}
               </div>
             )}
           </div>
@@ -182,12 +182,12 @@ export default function Header({
       </div>
 
       {/* Click outside to close wallet dropdown */}
-      {walletDropdownOpen && (
+      {/* {walletDropdownOpen && (
         <div
           className="fixed inset-0 z-40"
           onClick={() => setWalletDropdownOpen(false)}
         />
-      )}
+      )} */}
     </div>
   );
 }
