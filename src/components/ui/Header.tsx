@@ -113,6 +113,16 @@ export default function Header({
                           </div>
                           <div className="text-[#C9CDCF] text-xs mt-1 arimo-400">
                             {address?.slice(0, 6)}...{address?.slice(-4)}
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(
+                                  address as string
+                                );
+                              }}
+                              className="text-xs text-[#FAD691] hover:text-[#ED775A] hover:bg-[#FAD691]/20 rounded-md px-2 py-1"
+                            >
+                              Copy
+                            </button>
                           </div>
                         </div>
                         <button

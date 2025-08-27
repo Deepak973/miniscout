@@ -594,78 +594,87 @@ export default function AddAppPage() {
                         Search Results
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {searchResults.map((frame, index) => {
-                          const isOwner = isFrameOwner(frame);
-                          return (
-                            <div
-                              key={index}
-                              className={`p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:scale-105 ${
-                                selectedFrame === frame
-                                  ? "border-[#FAD691] bg-[#FAD691]/20 shadow-xl"
-                                  : isOwner
-                                  ? "border-[#ED775A]/50 hover:border-[#FAD691] bg-[#ED775A]/10 hover:bg-[#FAD691]/10"
-                                  : "border-[#ED775A]/30 hover:border-[#ED775A]/50 bg-[#ED775A]/5"
-                              }`}
-                              onClick={() => selectFrame(frame)}
-                            >
-                              <div className="flex flex-col space-y-4">
-                                <div className="flex items-center space-x-4">
-                                  <div className="w-16 h-16 rounded-xl overflow-hidden shadow-lg border-2 border-[#FAD691]/30">
-                                    <img
-                                      src={
-                                        frame.manifest.frame?.icon_url ||
-                                        frame.manifest.miniapp?.icon_url ||
-                                        "/icon.png"
-                                      }
-                                      alt="Mini App icon"
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => {
-                                        e.currentTarget.src = "/icon.png";
-                                      }}
-                                    />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center space-x-2 mb-2">
-                                      <h5 className="font-semibold text-[#FAD691] truncate flex-1 edu-nsw-act-cursive-600">
-                                        {frame.manifest.frame?.name ||
-                                          frame.manifest.miniapp?.name ||
-                                          frame.title}
-                                      </h5>
-                                      {isOwner && (
-                                        <div className="flex items-center space-x-1 px-3 py-1 bg-[#FAD691]/20 rounded-full flex-shrink-0 border border-[#FAD691]/30">
-                                          <CheckCircle className="w-3 h-3 text-[#FAD691]" />
-                                          <span className="text-xs text-[#FAD691] font-medium arimo-600">
-                                            Owner
-                                          </span>
-                                        </div>
-                                      )}
+                        {searchResults
+                          .sort((a, b) => {
+                            // Sort owned apps first
+                            const aIsOwner = isFrameOwner(a);
+                            const bIsOwner = isFrameOwner(b);
+                            if (aIsOwner && !bIsOwner) return -1;
+                            if (!aIsOwner && bIsOwner) return 1;
+                            return 0;
+                          })
+                          .map((frame, index) => {
+                            const isOwner = isFrameOwner(frame);
+                            return (
+                              <div
+                                key={index}
+                                className={`p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:scale-105 ${
+                                  selectedFrame === frame
+                                    ? "border-[#FAD691] bg-[#FAD691]/20 shadow-xl"
+                                    : isOwner
+                                    ? "border-[#ED775A]/50 hover:border-[#FAD691] bg-[#ED775A]/10 hover:bg-[#FAD691]/10"
+                                    : "border-[#ED775A]/30 hover:border-[#ED775A]/50 bg-[#ED775A]/5"
+                                }`}
+                                onClick={() => selectFrame(frame)}
+                              >
+                                <div className="flex flex-col space-y-4">
+                                  <div className="flex items-center space-x-4">
+                                    <div className="w-16 h-16 rounded-xl overflow-hidden shadow-lg border-2 border-[#FAD691]/30">
+                                      <img
+                                        src={
+                                          frame.manifest.frame?.icon_url ||
+                                          frame.manifest.miniapp?.icon_url ||
+                                          "/icon.png"
+                                        }
+                                        alt="Mini App icon"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.currentTarget.src = "/icon.png";
+                                        }}
+                                      />
                                     </div>
-                                    <p className="text-sm text-[#C9CDCF] mb-2 arimo-400">
-                                      by {frame.author.display_name} (@
-                                      {frame.author.username})
-                                    </p>
-                                    <p className="text-xs text-[#C9CDCF] arimo-400">
-                                      FID: {frame.author.fid}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <div className="text-sm text-[#C9CDCF] line-clamp-2 arimo-400">
-                                  {frame.manifest.frame?.description ||
-                                    frame.manifest.miniapp?.description ||
-                                    ""}
-                                </div>
-
-                                {selectedFrame === frame &&
-                                  ownershipVerified && (
-                                    <div className="flex justify-center">
-                                      <CheckCircle className="w-8 h-8 text-[#FAD691] animate-pulse" />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center space-x-2 mb-2">
+                                        <h5 className="font-semibold text-[#FAD691] truncate flex-1 edu-nsw-act-cursive-600">
+                                          {frame.manifest.frame?.name ||
+                                            frame.manifest.miniapp?.name ||
+                                            frame.title}
+                                        </h5>
+                                        {isOwner && (
+                                          <div className="flex items-center space-x-1 px-3 py-1 bg-[#FAD691]/20 rounded-full flex-shrink-0 border border-[#FAD691]/30">
+                                            <CheckCircle className="w-3 h-3 text-[#FAD691]" />
+                                            <span className="text-xs text-[#FAD691] font-medium arimo-600">
+                                              Owner
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      <p className="text-sm text-[#C9CDCF] mb-2 arimo-400">
+                                        by {frame.author.display_name} (@
+                                        {frame.author.username})
+                                      </p>
+                                      <p className="text-xs text-[#C9CDCF] arimo-400">
+                                        FID: {frame.author.fid}
+                                      </p>
                                     </div>
-                                  )}
+                                  </div>
+
+                                  <div className="text-sm text-[#C9CDCF] line-clamp-2 arimo-400">
+                                    {frame.manifest.frame?.description ||
+                                      frame.manifest.miniapp?.description ||
+                                      ""}
+                                  </div>
+
+                                  {selectedFrame === frame &&
+                                    ownershipVerified && (
+                                      <div className="flex justify-center">
+                                        <CheckCircle className="w-8 h-8 text-[#FAD691] animate-pulse" />
+                                      </div>
+                                    )}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
                       </div>
                     </div>
                   )}

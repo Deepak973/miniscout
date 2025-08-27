@@ -54,6 +54,7 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
     mapping(uint256 => address) public appOwners;
     mapping(string => bool) public registeredAppIds;
     mapping(address => uint256[]) public userFeedbackIds;
+    mapping(uint256 => uint256[]) public fidToUserFeedbackMapping;
 
     uint256 private _feedbackIds;
 
@@ -172,6 +173,7 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
         });
 
         userFeedbackIds[msg.sender].push(feedbackId);
+        fidToUserFeedbackMapping[fid].push(feedbackId);
 
         app.totalRatings++;
         app.totalFeedbackRewards += appTokenReward;
@@ -190,6 +192,24 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
         }
 
         emit FeedbackSubmitted(feedbackId, appId, msg.sender, rating, appTokenReward, protocolTokenReward);
+    }
+
+    /**
+     * @dev Update an existing feedback (rating & comment)
+     * @param feedbackId Feedback ID
+     * @param newRating New rating (1–5)
+     * @param newComment New feedback comment
+     */
+    function updateFeedback(uint256 feedbackId, uint256 newRating, string memory newComment) external nonReentrant {
+        Feedback storage fb = feedbacks[feedbackId];
+        require(fb.reviewer == msg.sender, "Not feedback owner");
+        require(newRating >= 1 && newRating <= 5, "Rating must be 1-5");
+        require(block.timestamp >= fb.createdAt + 1 days, "Can only update after 1 day");
+        require(bytes(newComment).length > 0, "Empty comment");
+        uint256 appTokenReward = apps[feedbacks[feedbackId].appId].rewardPerReview;
+        IERC20(apps[feedbacks[feedbackId].appId].appToken).transfer(msg.sender, appTokenReward / 2);
+        fb.rating = newRating;
+        fb.comment = newComment;
     }
 
     /**
@@ -282,10 +302,14 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
     function getApps() external view returns (App[] memory) {
         App[] memory result = new App[](_appIds);
 
-        for (uint256 i = 0; i <= (_appIds - 1); i++) {
-            result[0] = apps[i + 1];
+        for (uint256 i = 0; i < _appIds; i++) {
+            result[i] = apps[i + 1];
         }
         return result;
+    }
+
+    function getApp(uint256 _appId) public view returns (App memory) {
+        return apps[_appId];
     }
 
     /**
@@ -311,11 +335,6 @@ contract MiniScout is ReentrancyGuard, Ownable(msg.sender) {
         }
         return result;
     }
-    /**
-     * @dev Get all feedback structs for an app
-     * @param appId App ID
-     * @return Array of Feedback structs
-     */
 
     function getAppFeedbacks(uint256 appId) external view returns (Feedback[] memory) {
         uint256[] storage feedbackIds = appFeedbacks[appId];

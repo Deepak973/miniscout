@@ -167,7 +167,7 @@ export default function TokenDeployment({
         symbol: tokenSymbol.toUpperCase(),
         uri: metadataUri,
         payoutRecipient: address as Address,
-        chainId: baseSepolia.id,
+        chainId: base.id,
         skipMetadataValidation: true,
         platformReferrer:
           "0xb87d7543E47cD48c2987A3Ab545Da1ddE6c18A7c" as `0x${string}`,

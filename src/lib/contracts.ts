@@ -3,7 +3,7 @@ import { baseSepolia } from "viem/chains";
 import MINISCOUT_ABI from "../utils/MiniScoutABI.json";
 
 export const CONTRACT_ADDRESSES = {
-  MINISCOUT: "0xeA9C220474bA6a4Bb0BE9b013061055B45b68e0b" as `0x${string}`, // Update with your deployed address
+  MINISCOUT: "0xeD441aaFa5316a81B30d6FfcD901B1DB271B2aB1" as `0x${string}`, // Update with your deployed address
   PROTOCOL_TOKEN: "0xfa112a5eB23e0Cc31E11d7a98CC098266d7A2244" as `0x${string}`, // Update with your protocol token address
 };
 
@@ -208,5 +208,11 @@ export const contractWrites = {
     address: CONTRACT_ADDRESSES.MINISCOUT,
     abi: MINISCOUT_ABI,
     functionName: "deactivateApp",
+  },
+
+  updateFeedback: {
+    address: CONTRACT_ADDRESSES.MINISCOUT,
+    abi: MINISCOUT_ABI,
+    functionName: "updateFeedback",
   },
 };

@@ -119,6 +119,21 @@ export function useContract() {
     });
   };
 
+  const updateFeedback = async (
+    feedbackId: bigint,
+    newRating: number,
+    newComment: string
+  ) => {
+    if (!isConnected) throw new Error("Wallet not connected");
+
+    return await writeContractAsync({
+      address: CONTRACT_ADDRESSES.MINISCOUT,
+      abi: MINISCOUT_ABI,
+      functionName: "updateFeedback",
+      args: [feedbackId, BigInt(newRating), newComment],
+    });
+  };
+
   const approveTokens = async (
     tokenAddress: `0x${string}`,
     amount: string,
@@ -160,6 +175,7 @@ export function useContract() {
     addEscrow,
     withdrawEscrow,
     deactivateApp,
+    updateFeedback,
     approveTokens,
     isLoading: isWriting,
   };

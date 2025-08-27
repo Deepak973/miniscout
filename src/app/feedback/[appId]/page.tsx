@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Star, MessageSquare, Copy, Gift } from "lucide-react";
+import { Star, MessageSquare, Copy, Gift, Edit3 } from "lucide-react";
 import { Button } from "~/components/ui/Button";
 import { useMiniApp } from "@neynar/react";
 import toast from "react-hot-toast";
@@ -22,6 +22,7 @@ export default function FeedbackPage({
     isConnected,
     address,
     submitFeedback,
+    updateFeedback,
     isLoading: _isLoading,
   } = useContract();
   const [userFid, setUserFid] = useState<number | null>(null);
@@ -34,9 +35,13 @@ export default function FeedbackPage({
   const [userData, setUserData] = useState<Map<number, NeynarUser>>(new Map());
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [appId, setAppId] = useState<string>("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editRating, setEditRating] = useState(5);
+  const [editComment, setEditComment] = useState("");
 
   const copyFeedbackUrl = async () => {
     const feedbackUrl = `https://farcaster.xyz/miniapps/amt-aKG509bA/miniscout/feedback/${appId}`;
@@ -144,6 +149,18 @@ export default function FeedbackPage({
     }
   }, [appId, fetchAppAndFeedbacks]);
 
+  // Real-time countdown for feedback update availability
+  useEffect(() => {
+    if (!userFeedback) return;
+
+    const interval = setInterval(() => {
+      // Force re-render to update countdown
+      setFeedbacks([...feedbacks]);
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [userFeedback, feedbacks]);
+
   const handleSubmitFeedback = async () => {
     if (!isConnected || !address) {
       toast.error("Please connect your wallet first");
@@ -176,6 +193,71 @@ export default function FeedbackPage({
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleUpdateFeedback = async () => {
+    if (!isConnected || !address || !userFeedback) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    if (!editComment.trim()) {
+      toast.error("Please enter a comment");
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      await updateFeedback(
+        userFeedback.feedbackId,
+        editRating,
+        editComment.trim()
+      );
+      toast.success("Feedback updated successfully!");
+      setIsEditing(false);
+      fetchAppAndFeedbacks();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update feedback");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const startEditing = () => {
+    if (userFeedback) {
+      setEditRating(Number(userFeedback.rating));
+      setEditComment(userFeedback.comment);
+      setIsEditing(true);
+    }
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditRating(5);
+    setEditComment("");
+  };
+
+  const canUpdateFeedback = (feedback: Feedback) => {
+    const feedbackTime = Number(feedback.createdAt) * 1000;
+    const currentTime = Date.now();
+    const oneDayInMs = 24 * 60 * 60 * 1000;
+    return currentTime >= feedbackTime + oneDayInMs;
+  };
+
+  const getTimeUntilUpdate = (feedback: Feedback) => {
+    const feedbackTime = Number(feedback.createdAt) * 1000;
+    const currentTime = Date.now();
+    const oneDayInMs = 24 * 60 * 60 * 1000;
+    const timeRemaining = feedbackTime + oneDayInMs - currentTime;
+
+    if (timeRemaining <= 0) return null;
+
+    const hours = Math.floor(timeRemaining / (60 * 60 * 1000));
+    const minutes = Math.floor(
+      (timeRemaining % (60 * 60 * 1000)) / (60 * 1000)
+    );
+
+    return `${hours}h ${minutes}m`;
   };
 
   if (loading) {
@@ -348,28 +430,103 @@ export default function FeedbackPage({
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <div className="flex items-center space-x-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`w-4 h-4 ${
-                          star <= Number(userFeedback.rating)
-                            ? "text-[#FAD691] fill-current"
-                            : "text-gray-400"
-                        }`}
+                {!isEditing ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-4 h-4 ${
+                                star <= Number(userFeedback.rating)
+                                  ? "text-[#FAD691] fill-current"
+                                  : "text-gray-400"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm text-[#C9CDCF] arimo-400">
+                          {new Date(
+                            Number(userFeedback.createdAt) * 1000
+                          ).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {canUpdateFeedback(userFeedback) ? (
+                        <Button
+                          onClick={startEditing}
+                          className="bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 px-3 py-1 text-sm arimo-600 flex items-center space-x-1"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          <span>Edit Review</span>
+                        </Button>
+                      ) : (
+                        <div className="text-xs text-[#C9CDCF] arimo-400">
+                          Can update in: {getTimeUntilUpdate(userFeedback)}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[#C9CDCF] arimo-400">
+                      {userFeedback.comment}
+                    </p>
+                  </>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-[#FAD691] arimo-600">
+                        Edit Your Review
+                      </span>
+                      <Button
+                        onClick={cancelEditing}
+                        className="bg-[#ED775A]/20 text-[#ED775A] hover:bg-[#ED775A]/30 px-3 py-1 text-sm arimo-600"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-[#FAD691] mb-2 arimo-600">
+                        Your Rating
+                      </label>
+                      <div className="flex space-x-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            onClick={() => setEditRating(star)}
+                            className={`text-3xl transition-colors ${
+                              star <= editRating
+                                ? "text-[#FAD691]"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            ★
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-[#FAD691] mb-2 arimo-600">
+                        Your Review
+                      </label>
+                      <textarea
+                        value={editComment}
+                        onChange={(e) => setEditComment(e.target.value)}
+                        className="w-full p-3 border border-[#FAD691]/30 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FAD691]/20"
+                        rows={4}
+                        placeholder="Share your experience with this app..."
                       />
-                    ))}
+                    </div>
+
+                    <Button
+                      onClick={handleUpdateFeedback}
+                      disabled={updating || !editComment.trim()}
+                      className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] disabled:bg-gray-400 disabled:cursor-not-allowed text-white arimo-600"
+                    >
+                      {updating ? "Updating..." : "Update Review"}
+                    </Button>
                   </div>
-                  <span className="text-sm text-[#C9CDCF] arimo-400">
-                    {new Date(
-                      Number(userFeedback.createdAt) * 1000
-                    ).toLocaleDateString()}
-                  </span>
-                </div>
-                <p className="text-[#C9CDCF] arimo-400">
-                  {userFeedback.comment}
-                </p>
+                )}
               </div>
             )}
           </div>
@@ -471,11 +628,24 @@ export default function FeedbackPage({
                           {feedback.comment}
                         </p>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-[#C9CDCF] arimo-400">
-                            {new Date(
-                              Number(feedback.createdAt) * 1000
-                            ).toLocaleDateString()}
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-[#C9CDCF] arimo-400">
+                              {new Date(
+                                Number(feedback.createdAt) * 1000
+                              ).toLocaleDateString()}
+                            </span>
+                            {address &&
+                              feedback.reviewer.toLowerCase() ===
+                                address.toLowerCase() && (
+                                <span className="text-xs text-[#FAD691] bg-[#FAD691]/20 px-2 py-1 rounded-full arimo-400">
+                                  {canUpdateFeedback(feedback)
+                                    ? "Can Update"
+                                    : `Update in: ${getTimeUntilUpdate(
+                                        feedback
+                                      )}`}
+                                </span>
+                              )}
+                          </div>
                           {user && (
                             <span className="text-xs text-[#C9CDCF] arimo-400">
                               FID: {user.fid}
