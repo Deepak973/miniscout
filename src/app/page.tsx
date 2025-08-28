@@ -80,10 +80,6 @@ export default function HomePage() {
     window.location.href = "/rewards";
   };
 
-  const handleAppClick = (app: App & { averageRating: number }) => {
-    window.open(app.miniappUrl, "_blank");
-  };
-
   const copyFeedbackUrl = async (appId: string) => {
     const feedbackUrl = `https://farcaster.xyz/miniapps/amt-aKG509bA/miniscout/feedback/${appId}`;
     try {
@@ -194,7 +190,6 @@ export default function HomePage() {
                 <div
                   key={app.appId.toString()}
                   className="group relative bg-gradient-to-br from-[#1C1B1B]/80 to-[#2A2A2A]/60 backdrop-blur-xl rounded-2xl border border-[#FAD691]/20 hover:border-[#FAD691]/50 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer overflow-hidden"
-                  onClick={() => handleAppClick(app)}
                 >
                   {/* Header / Cover */}
                   <div className="relative h-28 w-full">

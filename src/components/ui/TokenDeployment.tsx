@@ -158,8 +158,28 @@ export default function TokenDeployment({
 
     setDeploying(true);
     try {
-      // to do add pinta uplaod
-      const metadataUri = `https://emerald-secure-dormouse-141.mypinata.cloud/ipfs/bafkreicijq4hf36w477w3xzphd2oofku5d5t5x3vyqbmbbotf7dodb7roe`;
+      // Upload metadata to Pinata via API
+      const metadataResponse = await fetch("/api/metadata/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: editableTokenName,
+          description: tokenDescription,
+          image: tokenImage,
+        }),
+      });
+
+      if (!metadataResponse.ok) {
+        const errorData = await metadataResponse.json();
+        throw new Error(errorData.error || "Failed to upload metadata");
+      }
+
+      const metadataData = await metadataResponse.json();
+      const metadataUri = metadataData.gatewayUrl;
+
+      console.log("Metadata uploaded:", metadataData);
 
       const args = {
         creator: address as Address,
