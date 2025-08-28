@@ -1,14 +1,14 @@
 import { createPublicClient, http } from "viem";
-import { base } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 import MINISCOUT_ABI from "../utils/MiniScoutABI.json";
 
 export const CONTRACT_ADDRESSES = {
-  MINISCOUT: "0xd376d8063AB94Ed9F0b0644F3028fEd4729dA1e0" as `0x${string}`, // Update with your deployed address
-  PROTOCOL_TOKEN: "0x7de87b9bbd164D21fa8691657c3DC841aD246e65" as `0x${string}`, // Update with your protocol token address
+  MINISCOUT: "0x6eEC7174fC2ec84aBe3b83bCa49Bc62B98Cf28fF" as `0x${string}`, // Update with your deployed address
+  PROTOCOL_TOKEN: "0xfa112a5eB23e0Cc31E11d7a98CC098266d7A2244" as `0x${string}`, // Update with your protocol token address
 };
 
 export const publicClient = createPublicClient({
-  chain: base,
+  chain: baseSepolia,
   transport: http(),
 });
 

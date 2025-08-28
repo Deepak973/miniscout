@@ -546,12 +546,7 @@ export default function AddAppPage() {
             {currentStep === "search" && (
               <div className="bg-[#ED775A]/10 rounded-xl shadow-xl p-8 overflow-hidden border border-[#FAD691]/30">
                 <div className="text-center mb-8">
-                  <h3 className="text-2xl font-semibold text-[#FAD691] mb-2 libertinus-keyboard-regular">
-                    Step 1: Search for Your MiniApp
-                  </h3>
-                  <p className="text-[#C9CDCF] arimo-400">
-                    Find and select your MiniApp from the search results
-                  </p>
+                  <h3 className="text-2xl font-semibold text-[#FAD691] mb-2 libertinus-keyboard-regular"></h3>
                 </div>
 
                 <div className="max-w-2xl mx-auto">

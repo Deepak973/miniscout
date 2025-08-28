@@ -17,8 +17,9 @@ import toast from "react-hot-toast";
 import { useContract } from "~/hooks/useContract";
 import { contractReads, App } from "~/lib/contracts";
 import { formatEther } from "viem";
-import { useConnect, useDisconnect } from "wagmi";
+import { useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import Header from "~/components/ui/Header";
+import { base, optimism } from "viem/chains";
 
 export default function HomePage() {
   const { context: _context } = useMiniApp();
@@ -39,6 +40,13 @@ export default function HomePage() {
   const [selectedApp, setSelectedApp] = useState<
     (App & { averageRating: number }) | null
   >(null);
+
+  const {
+    switchChain,
+    error: chainSwitchError,
+    isError: isChainSwitchError,
+    isPending: isChainSwitchPending,
+  } = useSwitchChain();
 
   useEffect(() => {
     fetchAllApps();
@@ -136,6 +144,11 @@ export default function HomePage() {
             </div>
           </div>
         )}
+
+        {/* <button onClick={() => switchChain({ chainId: optimism.id })}>
+          {" "}
+          switchchain{" "}
+        </button> */}
 
         {/* Stats */}
 
