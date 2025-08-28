@@ -189,8 +189,8 @@ export default function TokenDeployment({
         payoutRecipient: address as Address,
         chainId: base.id,
         skipMetadataValidation: true,
-        platformReferrer:
-          "0xb87d7543E47cD48c2987A3Ab545Da1ddE6c18A7c" as `0x${string}`,
+        platformReferrer: process.env
+          .NEXT_PUBLIC_PLATFORM_REFERRER as `0x${string}`,
         metadata: {
           type: "RAW_URI" as const,
           uri: metadataUri,
