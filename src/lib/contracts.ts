@@ -1,14 +1,14 @@
 import { createPublicClient, http } from "viem";
-import { baseSepolia } from "viem/chains";
+import { base } from "viem/chains";
 import MINISCOUT_ABI from "../utils/MiniScoutABI.json";
 
 export const CONTRACT_ADDRESSES = {
-  MINISCOUT: "0x6eEC7174fC2ec84aBe3b83bCa49Bc62B98Cf28fF" as `0x${string}`, // Update with your deployed address
-  PROTOCOL_TOKEN: "0xfa112a5eB23e0Cc31E11d7a98CC098266d7A2244" as `0x${string}`, // Update with your protocol token address
+  MINISCOUT: "0xdf1dBbAb029B42A98A4B5BA074B2Bf4D30D4B7d1" as `0x${string}`, // Update with your deployed address
+  PROTOCOL_TOKEN: "0x7de87b9bbd164D21fa8691657c3DC841aD246e65" as `0x${string}`, // Update with your protocol token address
 };
 
 export const publicClient = createPublicClient({
-  chain: baseSepolia,
+  chain: base,
   transport: http(),
 });
 
@@ -182,43 +182,5 @@ export const contractReads = {
       ...contractConfig,
       functionName: "getTotalFeedback",
     })) as bigint;
-  },
-};
-
-export const contractWrites = {
-  registerApp: {
-    address: CONTRACT_ADDRESSES.MINISCOUT,
-    abi: MINISCOUT_ABI,
-    functionName: "registerApp",
-  },
-
-  submitFeedback: {
-    address: CONTRACT_ADDRESSES.MINISCOUT,
-    abi: MINISCOUT_ABI,
-    functionName: "submitFeedback",
-  },
-
-  addEscrow: {
-    address: CONTRACT_ADDRESSES.MINISCOUT,
-    abi: MINISCOUT_ABI,
-    functionName: "addEscrow",
-  },
-
-  withdrawEscrow: {
-    address: CONTRACT_ADDRESSES.MINISCOUT,
-    abi: MINISCOUT_ABI,
-    functionName: "withdrawEscrow",
-  },
-
-  deactivateApp: {
-    address: CONTRACT_ADDRESSES.MINISCOUT,
-    abi: MINISCOUT_ABI,
-    functionName: "deactivateApp",
-  },
-
-  updateFeedback: {
-    address: CONTRACT_ADDRESSES.MINISCOUT,
-    abi: MINISCOUT_ABI,
-    functionName: "updateFeedback",
   },
 };
