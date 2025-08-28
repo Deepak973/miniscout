@@ -30,6 +30,7 @@ interface TokenDeploymentProps {
   onTokenChecked: (isChecked: boolean) => void;
   tokenImage?: string;
   tokenName?: string;
+  description?: string;
 }
 
 export default function TokenDeployment({
@@ -37,6 +38,7 @@ export default function TokenDeployment({
   onTokenChecked,
   tokenImage,
   tokenName = "My App Token",
+  description,
 }: TokenDeploymentProps) {
   const { address } = useContract();
   const [manualTokenAddress, setManualTokenAddress] = useState("");
@@ -47,7 +49,6 @@ export default function TokenDeployment({
   );
   const [deploying, setDeploying] = useState(false);
   const [tokenSymbol, setTokenSymbol] = useState("");
-  const [tokenDescription, setTokenDescription] = useState("");
   const [savedTokenAddress, setSavedTokenAddress] = useState<string>("");
   const [editableTokenName, setEditableTokenName] = useState(tokenName);
 
@@ -178,7 +179,7 @@ export default function TokenDeployment({
         },
         body: JSON.stringify({
           name: editableTokenName,
-          description: tokenDescription,
+          description: description || "Reward token for app reviews",
           image: tokenImage,
         }),
       });
@@ -456,24 +457,6 @@ export default function TokenDeployment({
               </p>
             </div>
 
-            <div>
-              <Label
-                htmlFor="tokenDescription"
-                className="text-sm font-medium text-[#FAD691] arimo-600"
-              >
-                Token Description
-              </Label>
-              <Input
-                id="tokenDescription"
-                type="text"
-                value={tokenDescription}
-                onChange={(e) => setTokenDescription(e.target.value)}
-                placeholder="Reward token for app reviews"
-                className="mt-2"
-                required
-              />
-            </div>
-
             {/* Token Preview */}
             {tokenSymbol && (
               <div className="p-3 bg-[#FAD691]/10 border border-[#FAD691]/20 rounded-lg">
@@ -491,9 +474,6 @@ export default function TokenDeployment({
                   <div>
                     <div className="text-sm font-medium text-[#FAD691] arimo-600">
                       {editableTokenName} ({tokenSymbol.toUpperCase()})
-                    </div>
-                    <div className="text-xs text-[#C9CDCF] arimo-400">
-                      {tokenDescription || "Reward token for app reviews"}
                     </div>
                   </div>
                 </div>
