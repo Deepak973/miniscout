@@ -699,7 +699,7 @@ export default function FeedbackPage({
               <div className="space-y-4 p-6 bg-gradient-to-br from-[#1C1B1B]/70 to-[#2A2A2A]/60 rounded-2xl shadow-lg border border-[#FAD691]/20">
                 {!isEditing ? (
                   <>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between w-full gap-4">
                       <div className="flex items-center space-x-3">
                         {/* Animated Star Rating */}
                         <div className="flex items-center space-x-1">
@@ -730,7 +730,7 @@ export default function FeedbackPage({
                         </Button>
                       ) : (
                         <div className="text-xs text-[#C9CDCF] arimo-400">
-                          Can update in: {getTimeUntilUpdate(userFeedback)}
+                          can update in: {getTimeUntilUpdate(userFeedback)}
                         </div>
                       )}
                     </div>

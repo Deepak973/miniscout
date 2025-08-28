@@ -20,6 +20,7 @@ import { formatEther } from "viem";
 import { useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import Header from "~/components/ui/Header";
 import { base, optimism } from "viem/chains";
+import { WalletTab } from "~/components/ui/tabs";
 
 export default function HomePage() {
   const { context: _context } = useMiniApp();
@@ -144,11 +145,6 @@ export default function HomePage() {
             </div>
           </div>
         )}
-
-        {/* <button onClick={() => switchChain({ chainId: optimism.id })}>
-          {" "}
-          switchchain{" "}
-        </button> */}
 
         {/* Stats */}
 

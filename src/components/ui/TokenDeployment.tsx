@@ -14,10 +14,16 @@ import {
 import { CONTRACT_ADDRESSES } from "~/lib/contracts";
 import toast from "react-hot-toast";
 import { createCoinCall, getCoinCreateFromLogs } from "@zoralabs/coins-sdk";
-import { useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
-import { base, baseSepolia } from "viem/chains";
+import {
+  useChainId,
+  useSendTransaction,
+  useSwitchChain,
+  useWaitForTransactionReceipt,
+} from "wagmi";
+import { base } from "viem/chains";
 import { Address } from "viem";
 import React, { useEffect } from "react";
+import { switchChain } from "viem/actions";
 
 interface TokenDeploymentProps {
   onTokenDeployed: (tokenAddress: string) => void;
@@ -45,6 +51,8 @@ export default function TokenDeployment({
   const [savedTokenAddress, setSavedTokenAddress] = useState<string>("");
   const [editableTokenName, setEditableTokenName] = useState(tokenName);
 
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   // Load saved token data on component mount
   useEffect(() => {
     const savedAddress = localStorage.getItem("deployedTokenAddress");
@@ -156,6 +164,10 @@ export default function TokenDeployment({
       return;
     }
 
+    if (chainId !== base.id) {
+      switchChain({ chainId: base.id });
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
     setDeploying(true);
     try {
       // Upload metadata to Pinata via API
@@ -449,7 +461,7 @@ export default function TokenDeployment({
                 htmlFor="tokenDescription"
                 className="text-sm font-medium text-[#FAD691] arimo-600"
               >
-                Token Description (Optional)
+                Token Description
               </Label>
               <Input
                 id="tokenDescription"
@@ -458,6 +470,7 @@ export default function TokenDeployment({
                 onChange={(e) => setTokenDescription(e.target.value)}
                 placeholder="Reward token for app reviews"
                 className="mt-2"
+                required
               />
             </div>
 

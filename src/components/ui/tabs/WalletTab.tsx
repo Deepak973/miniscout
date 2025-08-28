@@ -1,8 +1,18 @@
 "use client";
 
 import { useCallback, useMemo, useState, useEffect } from "react";
-import { useAccount, useSendTransaction, useSignTypedData, useWaitForTransactionReceipt, useDisconnect, useConnect, useSwitchChain, useChainId, type Connector } from "wagmi";
-import { useWallet as useSolanaWallet } from '@solana/wallet-adapter-react';
+import {
+  useAccount,
+  useSendTransaction,
+  useSignTypedData,
+  useWaitForTransactionReceipt,
+  useDisconnect,
+  useConnect,
+  useSwitchChain,
+  useChainId,
+  type Connector,
+} from "wagmi";
+import { useWallet as useSolanaWallet } from "@solana/wallet-adapter-react";
 import { base, degen, mainnet, optimism, unichain } from "wagmi/chains";
 import { Button } from "../Button";
 import { truncateAddress } from "../../../lib/truncateAddress";
@@ -16,7 +26,7 @@ import { useMiniApp } from "@neynar/react";
 
 /**
  * WalletTab component manages wallet-related UI for both EVM and Solana chains.
- * 
+ *
  * This component provides a comprehensive wallet interface that supports:
  * - EVM wallet connections (Farcaster Frame, Coinbase Wallet, MetaMask)
  * - Solana wallet integration
@@ -24,10 +34,10 @@ import { useMiniApp } from "@neynar/react";
  * - Transaction sending for both chains
  * - Chain switching for EVM chains
  * - Auto-connection in Farcaster clients
- * 
+ *
  * The component automatically detects when running in a Farcaster client
  * and attempts to auto-connect using the Farcaster Frame connector.
- * 
+ *
  * @example
  * ```tsx
  * <WalletTab />
@@ -47,7 +57,8 @@ function WalletStatus({ address, chainId }: WalletStatusProps) {
     <>
       {address && (
         <div className="text-xs w-full">
-          Address: <pre className="inline w-full">{truncateAddress(address)}</pre>
+          Address:{" "}
+          <pre className="inline w-full">{truncateAddress(address)}</pre>
         </div>
       )}
       {chainId && (
@@ -90,13 +101,19 @@ function ConnectionControls({
   if (context) {
     return (
       <div className="space-y-2 w-full">
-        <Button onClick={() => connect({ connector: connectors[0] })} className="w-full">
+        <Button
+          onClick={() => connect({ connector: connectors[0] })}
+          className="w-full"
+        >
           Connect (Auto)
         </Button>
         <Button
           onClick={() => {
             console.log("Manual Farcaster connection attempt");
-            console.log("Connectors:", connectors.map((c, i) => `${i}: ${c.name}`));
+            console.log(
+              "Connectors:",
+              connectors.map((c, i) => `${i}: ${c.name}`)
+            );
             connect({ connector: connectors[0] });
           }}
           className="w-full"
@@ -108,10 +125,16 @@ function ConnectionControls({
   }
   return (
     <div className="space-y-3 w-full">
-      <Button onClick={() => connect({ connector: connectors[1] })} className="w-full">
+      <Button
+        onClick={() => connect({ connector: connectors[1] })}
+        className="w-full"
+      >
         Connect Coinbase Wallet
       </Button>
-      <Button onClick={() => connect({ connector: connectors[2] })} className="w-full">
+      <Button
+        onClick={() => connect({ connector: connectors[2] })}
+        className="w-full"
+      >
         Connect MetaMask
       </Button>
     </div>
@@ -120,8 +143,10 @@ function ConnectionControls({
 
 export function WalletTab() {
   // --- State ---
-  const [evmContractTransactionHash, setEvmContractTransactionHash] = useState<string | null>(null);
-  
+  const [evmContractTransactionHash, setEvmContractTransactionHash] = useState<
+    string | null
+  >(null);
+
   // --- Hooks ---
   const { context } = useMiniApp();
   const { address, isConnected } = useAccount();
@@ -137,10 +162,12 @@ export function WalletTab() {
     isPending: isEvmTransactionPending,
   } = useSendTransaction();
 
-  const { isLoading: isEvmTransactionConfirming, isSuccess: isEvmTransactionConfirmed } =
-    useWaitForTransactionReceipt({
-      hash: evmContractTransactionHash as `0x${string}`,
-    });
+  const {
+    isLoading: isEvmTransactionConfirming,
+    isSuccess: isEvmTransactionConfirmed,
+  } = useWaitForTransactionReceipt({
+    hash: evmContractTransactionHash as `0x${string}`,
+  });
 
   const {
     signTypedData,
@@ -162,26 +189,35 @@ export function WalletTab() {
   // --- Effects ---
   /**
    * Auto-connect when Farcaster context is available.
-   * 
+   *
    * This effect detects when the app is running in a Farcaster client
    * and automatically attempts to connect using the Farcaster Frame connector.
    * It includes comprehensive logging for debugging connection issues.
    */
   useEffect(() => {
     // Check if we're in a Farcaster client environment
-    const isInFarcasterClient = typeof window !== 'undefined' && 
-      (window.location.href.includes('warpcast.com') || 
-       window.location.href.includes('farcaster') ||
-       window.ethereum?.isFarcaster ||
-       context?.client);
-    
-    if (context?.user?.fid && !isConnected && connectors.length > 0 && isInFarcasterClient) {
+    const isInFarcasterClient =
+      typeof window !== "undefined" &&
+      (window.location.href.includes("warpcast.com") ||
+        window.location.href.includes("farcaster") ||
+        window.ethereum?.isFarcaster ||
+        context?.client);
+
+    if (
+      context?.user?.fid &&
+      !isConnected &&
+      connectors.length > 0 &&
+      isInFarcasterClient
+    ) {
       console.log("Attempting auto-connection with Farcaster context...");
       console.log("- User FID:", context.user.fid);
-      console.log("- Available connectors:", connectors.map((c, i) => `${i}: ${c.name}`));
+      console.log(
+        "- Available connectors:",
+        connectors.map((c, i) => `${i}: ${c.name}`)
+      );
       console.log("- Using connector:", connectors[0].name);
       console.log("- In Farcaster client:", isInFarcasterClient);
-      
+
       // Use the first connector (farcasterFrame) for auto-connection
       try {
         connect({ connector: connectors[0] });
@@ -222,12 +258,12 @@ export function WalletTab() {
    * Uses the switchChain function from wagmi to change the active chain.
    */
   const handleSwitchChain = useCallback(() => {
-    switchChain({ chainId: nextChain.id });
+    switchChain({ chainId: base.id });
   }, [switchChain, nextChain.id]);
 
   /**
    * Sends a transaction to call the yoink() function on the Yoink contract.
-   * 
+   *
    * This function sends a transaction to a specific contract address with
    * the encoded function call data for the yoink() function.
    */
@@ -248,7 +284,7 @@ export function WalletTab() {
 
   /**
    * Signs typed data using EIP-712 standard.
-   * 
+   *
    * This function creates a typed data structure with the app name, version,
    * and chain ID, then requests the user to sign it.
    */
@@ -347,4 +383,4 @@ export function WalletTab() {
       )}
     </div>
   );
-} 
+}
