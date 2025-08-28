@@ -3,7 +3,7 @@ import { base } from "viem/chains";
 import MINISCOUT_ABI from "../utils/MiniScoutABI.json";
 
 export const CONTRACT_ADDRESSES = {
-  MINISCOUT: "0xdf1dBbAb029B42A98A4B5BA074B2Bf4D30D4B7d1" as `0x${string}`, // Update with your deployed address
+  MINISCOUT: "0xd376d8063AB94Ed9F0b0644F3028fEd4729dA1e0" as `0x${string}`, // Update with your deployed address
   PROTOCOL_TOKEN: "0x7de87b9bbd164D21fa8691657c3DC841aD246e65" as `0x${string}`, // Update with your protocol token address
 };
 
