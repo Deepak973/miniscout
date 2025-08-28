@@ -6,6 +6,11 @@ export function Toaster() {
   return (
     <HotToaster
       position="top-right"
+      gutter={8}
+      containerStyle={{
+        top: 20,
+        right: 20,
+      }}
       toastOptions={{
         duration: 4000,
         style: {

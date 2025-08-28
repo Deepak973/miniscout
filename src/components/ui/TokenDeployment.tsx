@@ -212,7 +212,7 @@ export default function TokenDeployment({
         const tokenAddress = deployedAddress.coin as `0x${string}`;
         onTokenDeployed(tokenAddress);
         onTokenChecked(true);
-        toast.success(`Token deployed successfully at ${tokenAddress}`);
+        toast.success(`Token deployed successfully`);
 
         // Save the deployed token address to localStorage
         localStorage.setItem("deployedTokenAddress", tokenAddress);

@@ -96,7 +96,7 @@ export default function RewardsPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-[#ED775A]/20 border border-[#FAD691]/30 rounded-lg p-8 text-center">
             <Gift className="w-16 h-16 text-[#FAD691] mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
+            <h2 className="text-2xl font-semibold text-[#FAD691] mb-2 libertinus-keyboard-regular">
               Connect to View Rewards
             </h2>
             <p className="text-[#C9CDCF] mb-6 arimo-400">
@@ -122,7 +122,7 @@ export default function RewardsPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with refresh button */}
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold text-[#FAD691] flex-1 edu-nsw-act-cursive-600">
+          <h1 className="text-2xl font-bold text-[#FAD691] flex-1 libertinus-keyboard-regular">
             My Rewards
           </h1>
           <button
@@ -148,7 +148,7 @@ export default function RewardsPage() {
             {/* Individual Token Rewards */}
             {tokenRewards.length > 0 && (
               <div className="bg-[#ED775A]/10 rounded-lg shadow p-6 border border-[#FAD691]/30">
-                <h2 className="text-lg font-semibold text-[#FAD691] mb-4 edu-nsw-act-cursive-600">
+                <h2 className="text-lg font-semibold text-[#FAD691] mb-4 libertinus-keyboard-regular">
                   Token Breakdown
                 </h2>
                 <div className="space-y-4">
@@ -240,7 +240,7 @@ export default function RewardsPage() {
 
             {/* How to Earn More */}
             <div className="bg-[#ED775A]/10 rounded-lg shadow p-6 border border-[#FAD691]/30">
-              <h2 className="text-lg font-semibold text-[#FAD691] mb-4 edu-nsw-act-cursive-600">
+              <h2 className="text-lg font-semibold text-[#FAD691] mb-4 libertinus-keyboard-regular">
                 How to Earn More
               </h2>
               <div className="space-y-3">

@@ -52,7 +52,7 @@ export default function Header({
   };
 
   return (
-    <div className="bg-[#ED775A]/10 shadow-sm border-b border-[#FAD691]/30">
+    <div className="bg-gradient-to-r from-white/20 to-[#ED775A]/10 shadow-sm border-b border-[#FAD691]/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Left side - Back button, Menu, and Logo */}
@@ -76,12 +76,7 @@ export default function Header({
             )}
 
             <div className="flex items-center space-x-3">
-              <img
-                src="/logo.png"
-                alt="MiniScout"
-                className="w-8 h-8 rounded"
-              />
-              <h1 className="text-xl font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
+              <h1 className="text-lg font-semibold text-[#FAD691] libertinus-keyboard-regular">
                 {title}
               </h1>
             </div>

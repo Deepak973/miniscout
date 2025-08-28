@@ -634,17 +634,6 @@ export default function FeedbackPage({
                                 Number(feedback.createdAt) * 1000
                               ).toLocaleDateString()}
                             </span>
-                            {address &&
-                              feedback.reviewer.toLowerCase() ===
-                                address.toLowerCase() && (
-                                <span className="text-xs text-[#FAD691] bg-[#FAD691]/20 px-2 py-1 rounded-full arimo-400">
-                                  {canUpdateFeedback(feedback)
-                                    ? "Can Update"
-                                    : `Update in: ${getTimeUntilUpdate(
-                                        feedback
-                                      )}`}
-                                </span>
-                              )}
                           </div>
                           {user && (
                             <span className="text-xs text-[#C9CDCF] arimo-400">

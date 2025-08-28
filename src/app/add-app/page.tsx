@@ -14,7 +14,7 @@ import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { useMiniApp } from "@neynar/react";
-import toast from "react-hot-toast";
+import { showToast } from "~/lib/toast";
 import { useContract } from "~/hooks/useContract";
 import { formatEther, formatUnits } from "viem";
 import { useConnect, useDisconnect } from "wagmi";
@@ -121,7 +121,7 @@ export default function AddAppPage() {
 
   const seachMiniApps = async () => {
     if (!searchQuery.trim()) {
-      toast.error("Please enter a search term");
+      showToast.error("Please enter a search term");
       return;
     }
 
@@ -134,14 +134,14 @@ export default function AddAppPage() {
 
       if (data.success && data.frames) {
         setSearchResults(data.frames);
-        toast.success(`Found ${data.frames.length} MiniApp`);
+        showToast.success(`Found ${data.frames.length} MiniApp`);
       } else {
         setSearchResults([]);
-        toast.error(data.error || "No frames found");
+        showToast.error(data.error || "No frames found");
       }
     } catch (error) {
       console.error("Error searching frames:", error);
-      toast.error("Failed to search frames");
+      showToast.error("Failed to search frames");
     } finally {
       setSearching(false);
     }
@@ -162,7 +162,7 @@ export default function AddAppPage() {
         app.name.toLowerCase() === frame.manifest.frame?.name.toLowerCase()
     );
     if (alreadyRegistered.length > 0) {
-      toast.error("This Mini App is already registered");
+      showToast.error("This Mini App is already registered");
       return;
     }
 
@@ -179,11 +179,11 @@ export default function AddAppPage() {
 
     if (isFrameOwner(frame)) {
       setOwnershipVerified(true);
-      toast.success("Mini App selected - You are the owner!");
+      showToast.success("Mini App selected - You are the owner!");
       setCurrentStep("token-setup");
     } else {
       setOwnershipVerified(false);
-      toast.error("You are not the owner of this Mini app");
+      showToast.error("You are not the owner of this Mini app");
     }
   };
 
@@ -201,7 +201,7 @@ export default function AddAppPage() {
       setTokenDetails(details);
     } catch (error) {
       console.error("Error checking token details:", error);
-      toast.error("Failed to fetch token details");
+      showToast.error("Failed to fetch token details");
     } finally {
       setCheckingAllowance(false);
     }
@@ -224,7 +224,7 @@ export default function AddAppPage() {
         CONTRACT_ADDRESSES.MINISCOUT as `0x${string}`
       );
 
-      toast.success("Approval transaction submitted!");
+      showToast.success("Approval transaction submitted!");
 
       // Wait a bit and then check allowance again
       setTimeout(() => {
@@ -232,7 +232,7 @@ export default function AddAppPage() {
       }, 2000);
     } catch (error: any) {
       console.error("Error approving tokens:", error);
-      toast.error(error.message || "Failed to approve tokens");
+      showToast.error(error.message || "Failed to approve tokens");
     } finally {
       setSubmitting(false);
     }
@@ -246,12 +246,12 @@ export default function AddAppPage() {
 
   const handleSubmit = async () => {
     if (!isConnected || !address) {
-      toast.error("Please connect your wallet first");
+      showToast.error("Please connect your wallet first");
       return;
     }
 
     if (!ownershipVerified) {
-      toast.error("Please select a frame that you own");
+      showToast.error("Please select a frame that you own");
       return;
     }
 
@@ -264,12 +264,12 @@ export default function AddAppPage() {
       !appData.rewardPerReview ||
       !appData.appTokenAddress
     ) {
-      toast.error("Please fill in all required fields");
+      showToast.error("Please fill in all required fields");
       return;
     }
 
     if (!tokenDetails) {
-      toast.error("Token details not loaded. Please try again.");
+      showToast.error("Token details not loaded. Please try again.");
       return;
     }
 
@@ -278,12 +278,14 @@ export default function AddAppPage() {
       tokenDetails.decimals
     );
     if (tokenDetails.allowance < tokenAmount) {
-      toast.error("Insufficient token allowance. Please approve tokens first.");
+      showToast.error(
+        "Insufficient token allowance. Please approve tokens first."
+      );
       return;
     }
 
     if (tokenDetails.balance < tokenAmount) {
-      toast.error("Insufficient token balance");
+      showToast.error("Insufficient token balance");
       return;
     }
 
@@ -317,10 +319,10 @@ export default function AddAppPage() {
         registrationFee
       );
 
-      toast.success("App registered successfully!");
+      showToast.success("App registered successfully!");
       window.location.href = "/";
     } catch (error: any) {
-      toast.error(error.message || "Failed to register app");
+      showToast.error(error.message || "Failed to register app");
     } finally {
       setSubmitting(false);
     }
@@ -400,7 +402,7 @@ export default function AddAppPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-hidden">
         {!isConnected ? (
           <div className="bg-[#ED775A]/20 border border-[#FAD691]/30 rounded-xl p-8 text-center">
-            <h2 className="text-2xl font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
+            <h2 className="text-2xl font-semibold text-[#FAD691] mb-2 libertinus-keyboard-regular">
               Connect to Register App
             </h2>
             <p className="text-[#C9CDCF] mb-6 arimo-400">
@@ -420,7 +422,7 @@ export default function AddAppPage() {
             <div className="bg-[#ED775A]/10 rounded-xl shadow-xl p-6 border border-[#FAD691]/30">
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
+                <h2 className="text-xl font-semibold text-[#FAD691] libertinus-keyboard-regular">
                   Steps
                 </h2>
                 <div className="text-sm text-[#C9CDCF] arimo-400">
@@ -544,7 +546,7 @@ export default function AddAppPage() {
             {currentStep === "search" && (
               <div className="bg-[#ED775A]/10 rounded-xl shadow-xl p-8 overflow-hidden border border-[#FAD691]/30">
                 <div className="text-center mb-8">
-                  <h3 className="text-2xl font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
+                  <h3 className="text-2xl font-semibold text-[#FAD691] mb-2 libertinus-keyboard-regular">
                     Step 1: Search for Your MiniApp
                   </h3>
                   <p className="text-[#C9CDCF] arimo-400">
@@ -590,7 +592,7 @@ export default function AddAppPage() {
                   {/* Search Results */}
                   {searchResults.length > 0 && (
                     <div className="space-y-4">
-                      <h4 className="text-lg font-medium text-[#FAD691] edu-nsw-act-cursive-600 text-center">
+                      <h4 className="text-lg font-medium text-[#FAD691] libertinus-keyboard-regular text-center">
                         Search Results
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -608,7 +610,7 @@ export default function AddAppPage() {
                             return (
                               <div
                                 key={index}
-                                className={`p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:scale-105 ${
+                                className={`p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:scale-105 min-h-[200px] flex flex-col ${
                                   selectedFrame === frame
                                     ? "border-[#FAD691] bg-[#FAD691]/20 shadow-xl"
                                     : isOwner
@@ -617,7 +619,7 @@ export default function AddAppPage() {
                                 }`}
                                 onClick={() => selectFrame(frame)}
                               >
-                                <div className="flex flex-col space-y-4">
+                                <div className="flex flex-col space-y-4 flex-1">
                                   <div className="flex items-center space-x-4">
                                     <div className="w-16 h-16 rounded-xl overflow-hidden shadow-lg border-2 border-[#FAD691]/30">
                                       <img
@@ -635,13 +637,13 @@ export default function AddAppPage() {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center space-x-2 mb-2">
-                                        <h5 className="font-semibold text-[#FAD691] truncate flex-1 edu-nsw-act-cursive-600">
+                                        <h5 className="font-semibold text-[#FAD691] truncate flex-1 ">
                                           {frame.manifest.frame?.name ||
                                             frame.manifest.miniapp?.name ||
                                             frame.title}
                                         </h5>
                                         {isOwner && (
-                                          <div className="flex items-center space-x-1 px-3 py-1 bg-[#FAD691]/20 rounded-full flex-shrink-0 border border-[#FAD691]/30">
+                                          <div className="flex items-center space-x-1 px-3 py-1 bg-[#FAD691]/20 rounded-full flex-shrink-0 border border-[#FAD691]/30 min-w-[70px] justify-center">
                                             <CheckCircle className="w-3 h-3 text-[#FAD691]" />
                                             <span className="text-xs text-[#FAD691] font-medium arimo-600">
                                               Owner
@@ -659,7 +661,7 @@ export default function AddAppPage() {
                                     </div>
                                   </div>
 
-                                  <div className="text-sm text-[#C9CDCF] line-clamp-2 arimo-400">
+                                  <div className="text-sm text-[#C9CDCF] line-clamp-2 arimo-400 min-h-[40px] flex items-center">
                                     {frame.manifest.frame?.description ||
                                       frame.manifest.miniapp?.description ||
                                       ""}
@@ -688,7 +690,7 @@ export default function AddAppPage() {
             {currentStep === "token-setup" && (
               <div className="bg-[#ED775A]/10 rounded-xl shadow-xl p-6 border border-[#FAD691]/30">
                 <div className="text-center mb-6">
-                  <h3 className="text-xl font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
+                  <h3 className="text-xl font-semibold text-[#FAD691] libertinus-keyboard-regular">
                     Add Your Token
                   </h3>
                 </div>
@@ -709,7 +711,7 @@ export default function AddAppPage() {
                   <div className="mt-6 flex justify-between">
                     <Button
                       onClick={handlePreviousStep}
-                      className="bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 px-4 py-2 rounded-lg border border-[#FAD691]/30 arimo-600"
+                      className="bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 px-6 py-2 rounded-lg border border-[#FAD691]/30 arimo-600 min-w-[100px]"
                     >
                       Back
                     </Button>
@@ -722,7 +724,7 @@ export default function AddAppPage() {
             {currentStep === "token-config" && (
               <div className="bg-[#ED775A]/10 rounded-xl shadow-xl p-6 border border-[#FAD691]/30">
                 <div className="text-center mb-6">
-                  <h3 className="text-xl font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
+                  <h3 className="text-xl font-semibold text-[#FAD691] libertinus-keyboard-regular">
                     Set Rewards
                   </h3>
                 </div>
@@ -752,22 +754,25 @@ export default function AddAppPage() {
                           appData.rewardPerReview &&
                           BigInt(value) < BigInt(appData.rewardPerReview)
                         ) {
-                          toast.error(
+                          showToast.error(
                             "Total tokens cannot be less than reward per review"
                           );
                         }
                       }}
                       placeholder="1000"
-                      className="mt-2"
+                      className="mt-2 h-[40px]"
                     />
-                    {appData.tokenAmount &&
-                      appData.rewardPerReview &&
-                      BigInt(appData.tokenAmount) <
-                        BigInt(appData.rewardPerReview) && (
-                        <div className="mt-2 text-xs text-red-400 arimo-400">
-                          ⚠️ Total tokens cannot be less than reward per review
-                        </div>
-                      )}
+                    <div className="mt-2 min-h-[20px]">
+                      {appData.tokenAmount &&
+                        appData.rewardPerReview &&
+                        BigInt(appData.tokenAmount) <
+                          BigInt(appData.rewardPerReview) && (
+                          <div className="text-xs text-red-400 arimo-400">
+                            ⚠️ Total tokens cannot be less than reward per
+                            review
+                          </div>
+                        )}
+                    </div>
                   </div>
 
                   <div className="bg-[#FAD691]/10 rounded-lg p-4 border border-[#FAD691]/20">
@@ -794,22 +799,24 @@ export default function AddAppPage() {
                           appData.tokenAmount &&
                           BigInt(value) > BigInt(appData.tokenAmount)
                         ) {
-                          toast.error(
+                          showToast.error(
                             "Reward per review cannot exceed total tokens"
                           );
                         }
                       }}
                       placeholder="10"
-                      className="mt-2"
+                      className="mt-2 h-[40px]"
                     />
-                    {appData.rewardPerReview &&
-                      appData.tokenAmount &&
-                      BigInt(appData.rewardPerReview) >
-                        BigInt(appData.tokenAmount) && (
-                        <div className="mt-2 text-xs text-red-400 arimo-400">
-                          ⚠️ Reward per review cannot exceed total tokens
-                        </div>
-                      )}
+                    <div className="mt-2 min-h-[20px]">
+                      {appData.rewardPerReview &&
+                        appData.tokenAmount &&
+                        BigInt(appData.rewardPerReview) >
+                          BigInt(appData.tokenAmount) && (
+                          <div className="text-xs text-red-400 arimo-400">
+                            ⚠️ Reward per review cannot exceed total tokens
+                          </div>
+                        )}
+                    </div>
                   </div>
 
                   <div className="bg-[#FAD691]/10 rounded-lg p-4 border border-[#FAD691]/20">
@@ -830,13 +837,13 @@ export default function AddAppPage() {
                         })
                       }
                       placeholder="https://your-app.com"
-                      className="mt-2"
+                      className="mt-2 h-[40px]"
                     />
                   </div>
 
                   {/* Token Status */}
                   {appData.appTokenAddress && tokenDetails && (
-                    <div className="p-3 bg-[#FAD691]/10 rounded-lg border border-[#FAD691]/20">
+                    <div className="p-3 bg-[#FAD691]/10 rounded-lg border border-[#FAD691]/20 min-h-[120px]">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-[#FAD691] arimo-600">
                           {tokenDetails.name} ({tokenDetails.symbol})
@@ -927,40 +934,40 @@ export default function AddAppPage() {
                         </div>
                       </div>
 
-                      {/* Validation Messages */}
-                      {tokenDetails.balance <
+                      {/* Validation Messages - Fixed Height Container */}
+                      <div className="mt-2 min-h-[40px] flex flex-col justify-center">
+                        {tokenDetails.balance <
                         parseTokenAmount(
                           appData.tokenAmount || "0",
                           tokenDetails.decimals
-                        ) && (
-                        <div className="mt-2 text-xs text-red-400 arimo-400">
-                          ⚠️ Insufficient balance
-                        </div>
-                      )}
-
-                      {tokenDetails.balance >=
-                        parseTokenAmount(
-                          appData.tokenAmount || "0",
-                          tokenDetails.decimals
-                        ) &&
-                        tokenDetails.allowance <
-                          parseTokenAmount(
-                            appData.tokenAmount || "0",
-                            tokenDetails.decimals
-                          ) && (
-                          <div className="mt-2 flex items-center justify-between">
+                        ) ? (
+                          <div className="text-xs text-red-400 arimo-400">
+                            ⚠️ Insufficient balance
+                          </div>
+                        ) : tokenDetails.balance >=
+                            parseTokenAmount(
+                              appData.tokenAmount || "0",
+                              tokenDetails.decimals
+                            ) &&
+                          tokenDetails.allowance <
+                            parseTokenAmount(
+                              appData.tokenAmount || "0",
+                              tokenDetails.decimals
+                            ) ? (
+                          <div className="flex items-center justify-between">
                             <span className="text-xs text-yellow-400 arimo-400">
                               ⚠️ Approval needed
                             </span>
                             <Button
                               onClick={handleApproveTokens}
                               disabled={submitting}
-                              className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white px-2 py-1 rounded text-xs arimo-600"
+                              className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white px-3 py-1 rounded text-xs arimo-600 min-w-[80px]"
                             >
                               {submitting ? "..." : "Approve"}
                             </Button>
                           </div>
-                        )}
+                        ) : null}
+                      </div>
                     </div>
                   )}
 
@@ -968,7 +975,7 @@ export default function AddAppPage() {
                   <div className="flex justify-between">
                     <Button
                       onClick={handlePreviousStep}
-                      className="bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 px-4 py-2 rounded-lg border border-[#FAD691]/30 arimo-600"
+                      className="bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 px-6 py-2 rounded-lg border border-[#FAD691]/30 arimo-600 min-w-[100px]"
                     >
                       Back
                     </Button>
@@ -976,7 +983,7 @@ export default function AddAppPage() {
                     <Button
                       disabled={!canProceedToNextStep()}
                       onClick={handleNextStep}
-                      className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white px-6 py-2 rounded-lg arimo-600"
+                      className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white px-6 py-2 rounded-lg arimo-600 min-w-[100px]"
                     >
                       Continue
                     </Button>
@@ -989,7 +996,7 @@ export default function AddAppPage() {
             {currentStep === "review" && (
               <div className="bg-[#ED775A]/10 rounded-xl shadow-xl p-8 overflow-hidden border border-[#FAD691]/30">
                 <div className="text-center mb-8">
-                  <h3 className="text-2xl font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
+                  <h3 className="text-2xl font-semibold text-[#FAD691] mb-2 libertinus-keyboard-regular">
                     Step 4: Review & Register Your App
                   </h3>
                   <p className="text-[#C9CDCF] arimo-400">
@@ -1030,7 +1037,7 @@ export default function AddAppPage() {
 
                     {/* App Info */}
                     <div className="pt-14 px-6 pb-6 space-y-6 text-center">
-                      <h3 className="text-lg font-semibold text-[#FAD691] truncate edu-nsw-act-cursive-600">
+                      <h3 className="text-lg font-semibold text-[#FAD691] truncate ">
                         {appData.name}
                       </h3>
                       <p className="text-[#C9CDCF] text-sm line-clamp-2 arimo-400">
@@ -1053,7 +1060,7 @@ export default function AddAppPage() {
 
                   {/* Token Details */}
                   <div className="bg-[#FAD691]/10 rounded-xl p-6 border border-[#FAD691]/30">
-                    <h4 className="text-lg font-semibold text-[#FAD691] mb-4 edu-nsw-act-cursive-600">
+                    <h4 className="text-lg font-semibold text-[#FAD691] mb-4 ">
                       Token Configuration
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1086,7 +1093,7 @@ export default function AddAppPage() {
 
                   {/* Registration Summary */}
                   <div className="bg-[#FAD691]/10 rounded-xl p-6 border border-[#FAD691]/30">
-                    <h4 className="text-lg font-semibold text-[#FAD691] mb-4 edu-nsw-act-cursive-600">
+                    <h4 className="text-lg font-semibold text-[#FAD691] mb-4 ">
                       Registration Summary
                     </h4>
                     <div className="space-y-3">
@@ -1134,10 +1141,10 @@ export default function AddAppPage() {
                 <div className="mt-8 flex justify-between">
                   <Button
                     onClick={handlePreviousStep}
-                    className="bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 px-6 py-3 flex items-center space-x-2 rounded-xl border border-[#FAD691]/30 transition-all duration-300 hover:scale-105 arimo-600"
+                    className="bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 px-6 py-3 flex items-center space-x-2 rounded-xl border border-[#FAD691]/30 transition-all duration-300 hover:scale-105 arimo-600 min-w-[120px]"
                   >
                     <ArrowLeft className="w-5 h-5" />
-                    <span>Back </span>
+                    <span>Back</span>
                   </Button>
 
                   <Button
@@ -1159,7 +1166,7 @@ export default function AddAppPage() {
                         ) ||
                       !ownershipVerified
                     }
-                    className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 arimo-600"
+                    className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-8 py-3 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 arimo-600 min-w-[140px]"
                   >
                     {submitting ? "Registering..." : "Register"}
                   </Button>

@@ -81,6 +81,13 @@ body {
   font-style: normal;
 }
 
+/* Libertinus Keyboard font class */
+.libertinus-keyboard-regular {
+  font-family: "Libertinus Keyboard", system-ui;
+  font-weight: 400;
+  font-style: normal;
+}
+
 .roboto-mono-100 {
   font-family: "Roboto Mono", monospace;
   font-optical-sizing: auto;

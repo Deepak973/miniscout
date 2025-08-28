@@ -156,7 +156,7 @@ export default function HomePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
+              <h2 className="text-xl font-semibold text-[#FAD691] libertinus-keyboard-regular">
                 Mini Apps
               </h2>
               <span className="text-sm text-[#C9CDCF] arimo-400">
@@ -167,7 +167,7 @@ export default function HomePage() {
             {filteredApps.length === 0 ? (
               <div className="bg-[#ED775A]/10 rounded-lg shadow p-12 text-center border border-[#FAD691]/20">
                 <MessageSquare className="w-12 h-12 text-[#FAD691] mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-[#FAD691] mb-2 edu-nsw-act-cursive-600">
+                <h3 className="text-lg font-semibold text-[#FAD691] mb-2 libertinus-keyboard-regular">
                   No apps found
                 </h3>
                 <p className="text-[#C9CDCF] mb-6 arimo-400">
@@ -306,7 +306,7 @@ export default function HomePage() {
             {/* Sidebar */}
             <div className="absolute left-0 top-0 h-full w-80 bg-black/60 backdrop-blur-lg shadow-xl border-r border-[#FAD691]/20">
               <div className="flex items-center justify-between p-4 border-b border-[#FAD691]/20">
-                <h2 className="text-lg font-semibold text-[#FAD691] edu-nsw-act-cursive-600">
+                <h2 className="text-lg font-semibold text-[#FAD691] libertinus-keyboard-regular">
                   Menu
                 </h2>
                 <button
@@ -317,22 +317,22 @@ export default function HomePage() {
                 </button>
               </div>
 
-              <div className="p-4 space-y-4">
+              <div className="p-4 space-y-4 ">
                 <Button
                   onClick={handleAddNewApp}
-                  className="w-full bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white arimo-600"
+                  className="w-full bg-[#FAD691] hover:bg-[#ED775A] hover:text-white text-[#0F0E0E] arimo-600 libertinus-keyboard-regular"
                 >
                   Add New App
                 </Button>
                 <Button
                   onClick={handleMyApps}
-                  className="w-full bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 arimo-600"
+                  className="w-full bg-[#FAD691] hover:bg-[#ED775A] hover:text-white text-[#0F0E0E] arimo-600 libertinus-keyboard-regular"
                 >
                   My Apps
                 </Button>
                 <Button
                   onClick={handleRewards}
-                  className="w-full bg-[#FAD691]/20 text-[#FAD691] hover:bg-[#FAD691]/30 arimo-600"
+                  className="w-full bg-[#FAD691] hover:bg-[#ED775A] hover:text-white text-[#0F0E0E] arimo-600 libertinus-keyboard-regular"
                 >
                   My Rewards
                 </Button>

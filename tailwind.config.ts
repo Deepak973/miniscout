@@ -69,6 +69,9 @@ export default {
         "typing-text": "typing-text 3s steps(30, end) forwards",
         blink: "blink 1s infinite",
       },
+      fontFamily: {
+        "libertinus-keyboard": ["Libertinus Keyboard", "system-ui"],
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],
