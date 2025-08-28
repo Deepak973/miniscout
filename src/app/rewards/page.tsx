@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { RefreshCw, Gift, TrendingUp, Copy } from "lucide-react";
+import { RefreshCw, Gift, TrendingUp, Copy, X } from "lucide-react";
 import { useContract } from "~/hooks/useContract";
 import { contractReads } from "~/lib/contracts";
 import { formatEther } from "viem";
 import { useConnect } from "wagmi";
 import toast from "react-hot-toast";
 import Header from "~/components/ui/Header";
+import { Button } from "~/components/ui/Button";
 
 interface TokenRewardInfo {
   tokenAddress: `0x${string}`;
@@ -27,6 +28,10 @@ export default function RewardsPage() {
   const [tokenRewards, setTokenRewards] = useState<TokenRewardInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showTokenChart, setShowTokenChart] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<TokenRewardInfo | null>(
+    null
+  );
 
   const fetchUserRewards = useCallback(async () => {
     if (!address) return;
@@ -174,7 +179,14 @@ export default function RewardsPage() {
                         </div>
                         <div>
                           <div className="flex items-center space-x-2">
-                            <div className="font-medium text-[#FAD691] arimo-600">
+                            <button
+                              onClick={() => {
+                                setSelectedToken(tokenReward);
+                                setShowTokenChart(true);
+                              }}
+                              className="font-medium text-[#FAD691] arimo-600 hover:text-[#ED775A] transition-colors duration-200 cursor-pointer hover:underline"
+                              title="Click to view token chart"
+                            >
                               {tokenReward.appInfo ? (
                                 tokenReward.appInfo.name
                               ) : (
@@ -183,7 +195,7 @@ export default function RewardsPage() {
                                   {tokenReward.tokenAddress.slice(-4)}
                                 </>
                               )}
-                            </div>
+                            </button>
                             <Copy
                               className="w-4 h-4 text-[#C9CDCF] cursor-pointer hover:text-[#FAD691]"
                               onClick={() => {
@@ -267,6 +279,83 @@ export default function RewardsPage() {
                       rewards.
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Token Chart Modal */}
+        {showTokenChart && selectedToken && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              onClick={() => setShowTokenChart(false)}
+            />
+
+            {/* Modal */}
+            <div className="relative bg-[#0F0E0E] rounded-2xl border border-[#FAD691]/30 shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-[#FAD691]/20">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-lg overflow-hidden">
+                    {selectedToken.appInfo ? (
+                      <img
+                        src={selectedToken.appInfo.iconUrl}
+                        alt={selectedToken.appInfo.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/icon.png";
+                        }}
+                      />
+                    ) : (
+                      <Gift className="w-6 h-6 text-[#ED775A]" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-[#FAD691] libertinus-keyboard-regular">
+                      {selectedToken.appInfo
+                        ? selectedToken.appInfo.name
+                        : "Token"}{" "}
+                      Chart
+                    </h3>
+                    <p className="text-sm text-[#C9CDCF] arimo-400">
+                      {selectedToken.tokenAddress.slice(0, 6)}...
+                      {selectedToken.tokenAddress.slice(-4)}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setShowTokenChart(false)}
+                  className="p-2 bg-[#ED775A]/20 text-[#FAD691] hover:bg-[#ED775A]/40 rounded-lg transition-all duration-200 hover:scale-105"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+
+              {/* Chart Content */}
+              <div className="p-6">
+                <div
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    height: "400px",
+                  }}
+                >
+                  <iframe
+                    id="geckoterminal-embed"
+                    title="GeckoTerminal Embed"
+                    src={`https://www.geckoterminal.com/base/pools/${selectedToken.tokenAddress}?embed=1&info=0&swaps=0&light_chart=0&chart_type=market_cap&resolution=1d&bg_color=111827`}
+                    frameBorder="0"
+                    allow="clipboard-write"
+                    allowFullScreen
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: "12px",
+                    }}
+                  />
                 </div>
               </div>
             </div>

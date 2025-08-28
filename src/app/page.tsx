@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Gift,
   Copy,
+  X,
 } from "lucide-react";
 import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/input";
@@ -34,6 +35,10 @@ export default function HomePage() {
   >([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [_walletDropdownOpen, _setWalletDropdownOpen] = useState(false);
+  const [showTokenChart, setShowTokenChart] = useState(false);
+  const [selectedApp, setSelectedApp] = useState<
+    (App & { averageRating: number }) | null
+  >(null);
 
   useEffect(() => {
     fetchAllApps();
@@ -193,18 +198,13 @@ export default function HomePage() {
                 >
                   {/* Header / Cover */}
                   <div className="relative h-28 w-full">
-                    {/* Stretched Cover Image */}
                     <img
                       src={app.iconUrl}
                       alt={app.name}
                       className="w-full h-full object-cover"
                       onError={(e) => (e.currentTarget.src = "/icon.png")}
                     />
-
-                    {/* Overlay for readability */}
                     <div className="absolute inset-0 bg-black/30" />
-
-                    {/* Floating App Icon */}
                     <div className="absolute -bottom-6 left-4 w-14 h-14 rounded-xl overflow-hidden border-2 border-[#FAD691]/40 shadow-lg bg-black/40">
                       <img
                         src={app.iconUrl}
@@ -257,6 +257,38 @@ export default function HomePage() {
                       </div>
                     </div>
 
+                    {/* Token Address */}
+                    <div className="mt-3 bg-[#FAD691]/10 rounded-xl border border-[#FAD691]/30 px-4 py-3 shadow-sm">
+                      <h3 className="text-sm font-semibold text-[#FAD691] mb-2 flex items-center gap-2">
+                        <span className="text-[#ED775A]">🔗</span>
+                        Token Contract
+                      </h3>
+                      <div className="flex items-center justify-between">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedApp(app);
+                            setShowTokenChart(true);
+                          }}
+                          className="text-sm text-[#FAD691] font-mono arimo-600 hover:text-[#ED775A] transition-colors duration-200 cursor-pointer hover:underline"
+                          title="Click to view token chart"
+                        >
+                          {app.appToken.slice(0, 6)}...{app.appToken.slice(-4)}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(app.appToken);
+                            toast.success("Token address copied to clipboard!");
+                          }}
+                          className="p-1.5 bg-[#ED775A]/20 text-[#FAD691] hover:bg-[#ED775A]/40 rounded-md transition-all duration-200 hover:scale-105"
+                          title="Copy token address"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Actions */}
                     <div className="flex gap-2">
                       <Button
@@ -293,6 +325,78 @@ export default function HomePage() {
             )}
           </div>
         </div>
+
+        {/* Token Chart Modal */}
+        {showTokenChart && selectedApp && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              onClick={() => setShowTokenChart(false)}
+            />
+
+            {/* Modal */}
+            <div className="relative bg-[#0F0E0E] rounded-2xl border border-[#FAD691]/30 shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-[#FAD691]/20">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-lg overflow-hidden">
+                    <img
+                      src={selectedApp.iconUrl}
+                      alt={selectedApp.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "/icon.png";
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-[#FAD691] libertinus-keyboard-regular">
+                      {selectedApp.name}
+                    </h3>
+                    <p className="text-sm text-[#C9CDCF] arimo-400">
+                      {selectedApp.appToken.slice(0, 6)}...
+                      {selectedApp.appToken.slice(-4)}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowTokenChart(false)}
+                  className="!p-0 !m-0 w-5 h-5 flex items-center justify-center 
+                bg-[#ED775A]/20 text-[#FAD691] hover:bg-[#ED775A]/40 
+                rounded-lg transition-all duration-200 hover:scale-105"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Chart Content */}
+              <div className="p-6">
+                <div
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    height: "400px",
+                  }}
+                >
+                  <iframe
+                    id="geckoterminal-embed"
+                    title="GeckoTerminal Embed"
+                    src={`https://www.geckoterminal.com/base/pools/${selectedApp.appToken}?embed=1&info=0&swaps=0&light_chart=0&chart_type=market_cap&resolution=1d&bg_color=111827`}
+                    frameBorder="0"
+                    allow="clipboard-write"
+                    allowFullScreen
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: "12px",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Sidebar */}
         {sidebarOpen && (
