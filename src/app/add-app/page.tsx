@@ -161,10 +161,10 @@ export default function AddAppPage() {
       (app) =>
         app.name.toLowerCase() === frame.manifest.frame?.name.toLowerCase()
     );
-    // if (alreadyRegistered.length > 0) {
-    //   showToast.error("This Mini App is already registered");
-    //   return;
-    // }
+    if (alreadyRegistered.length > 0) {
+      showToast.error("This Mini App is already registered");
+      return;
+    }
 
     const frameData = frame.manifest.frame || frame.manifest.miniapp;
     if (frameData) {
