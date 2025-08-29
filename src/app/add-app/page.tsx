@@ -161,10 +161,10 @@ export default function AddAppPage() {
       (app) =>
         app.name.toLowerCase() === frame.manifest.frame?.name.toLowerCase()
     );
-    if (alreadyRegistered.length > 0) {
-      showToast.error("This Mini App is already registered");
-      return;
-    }
+    // if (alreadyRegistered.length > 0) {
+    //   showToast.error("This Mini App is already registered");
+    //   return;
+    // }
 
     const frameData = frame.manifest.frame || frame.manifest.miniapp;
     if (frameData) {
@@ -174,6 +174,7 @@ export default function AddAppPage() {
         description: frameData.description || "",
         iconUrl: frameData.icon_url || "",
         appId: frame.frames_url || "",
+        miniappUrl: frameData.home_url || "",
       }));
     }
 
@@ -338,7 +339,6 @@ export default function AddAppPage() {
         return (
           appData.tokenAmount &&
           appData.rewardPerReview &&
-          appData.miniappUrl &&
           tokenDetails &&
           tokenDetails.balance >=
             parseTokenAmount(appData.tokenAmount, tokenDetails.decimals) &&
@@ -386,8 +386,7 @@ export default function AddAppPage() {
       (step === "token-config" &&
         appData.tokenAmount &&
         BigInt(appData.rewardPerReview) <= BigInt(appData.tokenAmount) &&
-        appData.rewardPerReview &&
-        appData.miniappUrl) ||
+        appData.rewardPerReview) ||
       (step === "review" && currentStep === "review")
     ) {
       return "completed";
@@ -814,28 +813,6 @@ export default function AddAppPage() {
                     </div>
                   </div>
 
-                  <div className="bg-[#FAD691]/10 rounded-lg p-4 border border-[#FAD691]/20">
-                    <Label
-                      htmlFor="miniappUrl"
-                      className="text-sm font-medium text-[#FAD691] arimo-600"
-                    >
-                      App URL
-                    </Label>
-                    <Input
-                      id="miniappUrl"
-                      type="text"
-                      value={appData.miniappUrl}
-                      onChange={(e) =>
-                        setAppData({
-                          ...appData,
-                          miniappUrl: e.target.value,
-                        })
-                      }
-                      placeholder="https://your-app.com"
-                      className="mt-2 h-[40px]"
-                    />
-                  </div>
-
                   {/* Token Status */}
                   {appData.appTokenAddress && tokenDetails && (
                     <div className="p-3 bg-[#FAD691]/10 rounded-lg border border-[#FAD691]/20 min-h-[120px]">
@@ -862,43 +839,50 @@ export default function AddAppPage() {
                       </div>
 
                       {/* Token Details Grid */}
-                      <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-                        <div>
-                          <span className="text-[#C9CDCF] arimo-400">
+                      <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+                        {/* Balance */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#C9CDCF] font-light">
                             Balance:
                           </span>
-                          <span className="ml-1 text-[#C9CDCF] font-medium">
+                          <span className="text-[#C9CDCF] font-medium">
                             {formatUnits(
                               tokenDetails.balance,
                               tokenDetails.decimals
                             )}
                           </span>
                         </div>
-                        <div>
-                          <span className="text-[#C9CDCF] arimo-400">
+
+                        {/* Allowance */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#C9CDCF] font-light">
                             Allowance:
                           </span>
-                          <span className="ml-1 text-[#C9CDCF] font-medium">
+                          <span className="text-[#C9CDCF] font-medium">
                             {formatUnits(
                               tokenDetails.allowance,
                               tokenDetails.decimals
                             )}
                           </span>
                         </div>
-                        <div>
-                          <span className="text-[#C9CDCF] arimo-400">
+
+                        {/* Required */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#C9CDCF] font-light">
                             Required:
                           </span>
-                          <span className="ml-1 text-[#C9CDCF] font-medium">
+                          <span className="text-[#C9CDCF] font-medium">
                             {appData.tokenAmount || "0"}
                           </span>
                         </div>
-                        <div>
-                          <span className="text-[#C9CDCF] arimo-400">
+
+                        {/* Status */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-[#C9CDCF] font-light">
                             Status:
                           </span>
                           <span
-                            className={`ml-1 font-medium ${
+                            className={`font-medium ${
                               tokenDetails.allowance >=
                                 parseTokenAmount(
                                   appData.tokenAmount || "0",
@@ -955,7 +939,12 @@ export default function AddAppPage() {
                             </span>
                             <Button
                               onClick={handleApproveTokens}
-                              disabled={submitting}
+                              disabled={
+                                submitting ||
+                                checkingAllowance ||
+                                BigInt(appData.tokenAmount) <
+                                  BigInt(appData.rewardPerReview)
+                              }
                               className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white px-3 py-1 rounded text-xs arimo-600 min-w-[80px]"
                             >
                               {submitting ? "..." : "Approve"}
@@ -1148,7 +1137,6 @@ export default function AddAppPage() {
                       submitting ||
                       !appData.name ||
                       !appData.description ||
-                      !appData.miniappUrl ||
                       !appData.appId ||
                       !appData.tokenAmount ||
                       !appData.rewardPerReview ||

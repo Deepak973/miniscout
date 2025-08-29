@@ -290,7 +290,11 @@ export default function TokenDeployment({
                   : "bg-[#FAD691]/20 text-[#C9CDCF] hover:bg-[#FAD691]/30"
               }`}
             >
-              <Zap className="w-3 h-3 inline mr-1" />
+              <img
+                src="/zoralogo.png"
+                alt="Zora"
+                className="w-3 h-3 inline mr-1"
+              />
               Deploy on Zora
             </button>
           </div>
@@ -492,7 +496,7 @@ export default function TokenDeployment({
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">
-                  <Zap className="w-4 h-4" />
+                  <img src="/zoralogo.png" alt="Zora" className="w-4 h-4" />
                   <span>Deploy on Zora</span>
                 </div>
               )}

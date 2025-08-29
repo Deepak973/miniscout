@@ -316,11 +316,12 @@ export default function HomePage() {
                       <Button
                         onClick={(e) => {
                           e.stopPropagation();
-                          window.open(app.miniappUrl, "_blank");
+                          navigator.clipboard.writeText(app.miniappUrl);
+                          toast.success("App URL copied to clipboard");
                         }}
                         className="flex items-center justify-center gap-1 flex-1 bg-[#ED775A] text-white hover:bg-[#FAD691] hover:text-[#0F0E0E] text-xs rounded-lg transition hover:scale-105"
                       >
-                        <ExternalLink className="w-3 h-3" /> Open
+                        <Copy className="w-3 h-3" /> App URL
                       </Button>
                     </div>
                   </div>

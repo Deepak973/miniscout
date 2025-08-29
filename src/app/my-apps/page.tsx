@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { MessageSquare, ExternalLink } from "lucide-react";
+import { MessageSquare, ExternalLink, Copy } from "lucide-react";
 import { Button } from "~/components/ui/Button";
 import { useContract } from "~/hooks/useContract";
 import { contractReads, App } from "~/lib/contracts";
@@ -207,11 +207,14 @@ export default function MyAppsPage() {
                   {/* Action Buttons */}
                   <div className="flex flex-col space-y-3">
                     <Button
-                      onClick={() => handleAppClick(app)}
+                      onClick={() => {
+                        navigator.clipboard.writeText(app.miniappUrl);
+                        toast.success("App URL copied to clipboard");
+                      }}
                       className="w-full bg-[#ED775A] text-white hover:bg-[#FAD691] hover:text-[#0F0E0E] arimo-600 py-3 rounded-lg shadow-lg transition-all duration-300 hover:scale-105"
                     >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Open App
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy app URL
                     </Button>
                     <Button
                       onClick={() =>
