@@ -409,7 +409,11 @@ export default function TokenDeployment({
             {/* Zora Deployment Form */}
             <div className="bg-gradient-to-r from-[#ED775A]/10 to-[#FAD691]/10 rounded-lg p-4 border border-[#FAD691]/20">
               <div className="flex items-center space-x-2 mb-3">
-                <Zap className="w-4 h-4 text-[#FAD691]" />
+                <img
+                  src="/zoralogo.png"
+                  alt="Zora"
+                  className="w-4 h-4 text-[#FAD691]"
+                />
                 <span className="text-sm font-medium text-[#FAD691] arimo-600">
                   Deploy New Token on Zora
                 </span>
