@@ -202,8 +202,11 @@ export default function TutorialModal({ isOpen, onClose }: TutorialModalProps) {
               onClick={handleNext}
               className="bg-[#ED775A] hover:bg-[#FAD691] hover:text-[#0F0E0E] text-white px-6 py-2 rounded-lg arimo-600 flex items-center space-x-2 transition-all duration-300 hover:scale-105"
             >
-              <span>{isLastStep ? "Explore" : ""}</span>
-              {!isLastStep && <ArrowRight className="w-4 h-4" />}
+              {!isLastStep ? (
+                <ArrowRight className="w-4 h-4" />
+              ) : (
+                <span>Explore</span>
+              )}
             </button>
           </div>
         </div>
