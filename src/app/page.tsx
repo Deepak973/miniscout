@@ -9,6 +9,7 @@ import {
   Gift,
   Copy,
   X,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "~/components/ui/Button";
 import { Input } from "~/components/ui/input";
@@ -19,8 +20,7 @@ import { contractReads, App } from "~/lib/contracts";
 import { formatEther } from "viem";
 import { useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import Header from "~/components/ui/Header";
-import { base, optimism } from "viem/chains";
-import { WalletTab } from "~/components/ui/tabs";
+import TutorialModal from "~/components/ui/TutorialModal";
 
 export default function HomePage() {
   const { context: _context } = useMiniApp();
@@ -41,16 +41,19 @@ export default function HomePage() {
   const [selectedApp, setSelectedApp] = useState<
     (App & { averageRating: number }) | null
   >(null);
-
-  const {
-    switchChain,
-    error: chainSwitchError,
-    isError: isChainSwitchError,
-    isPending: isChainSwitchPending,
-  } = useSwitchChain();
+  const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
     fetchAllApps();
+
+    // Check if user should see tutorial
+    const hasSeenTutorial = localStorage.getItem("miniscout-tutorial-seen");
+    if (hasSeenTutorial !== "true") {
+      // Show tutorial after a short delay
+      setTimeout(() => {
+        setShowTutorial(true);
+      }, 1000);
+    }
   }, []);
 
   useEffect(() => {
@@ -148,9 +151,9 @@ export default function HomePage() {
 
         {/* Stats */}
 
-        {/* Search */}
-        <div className="mb-8">
-          <div className="relative">
+        {/* Search and Help */}
+        <div className="mb-8 flex items-center space-x-4">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#ED775A] w-5 h-5" />
             <Input
               type="text"
@@ -160,6 +163,13 @@ export default function HomePage() {
               className="pl-10 w-full border-[#FAD691]/30 focus:border-[#ED775A] focus:ring-[#FAD691]/20"
             />
           </div>
+          <button
+            onClick={() => setShowTutorial((prev) => !prev)}
+            className="bg-[#ED775A]/20 text-[#FAD691] hover:bg-[#ED775A]/40 border border-[#ED775A]/30 px-4 py-2 rounded-lg arimo-600 flex items-center space-x-2 transition-all duration-300 hover:scale-105"
+            title="How to use MiniScout"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Apps Grid */}
@@ -445,11 +455,27 @@ export default function HomePage() {
                 >
                   My Rewards
                 </Button>
+                <Button
+                  onClick={() => {
+                    setSidebarOpen(false);
+                    setShowTutorial(true);
+                  }}
+                  className="w-full bg-[#ED775A]/20 text-[#FAD691] hover:bg-[#ED775A]/40 border border-[#ED775A]/30 arimo-600 libertinus-keyboard-regular flex items-center justify-center"
+                >
+                  <HelpCircle className="w-4 h-4 mr-2" />
+                  Tutorial
+                </Button>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Tutorial Modal */}
+      <TutorialModal
+        isOpen={showTutorial}
+        onClose={() => setShowTutorial(false)}
+      />
     </div>
   );
 }
